@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { LoginPage } from './pages/LoginPage'
 import { StubPage } from './pages/StubPage'
+import { CourseListPage } from './pages/CourseListPage'
+import { CourseEditPage } from './pages/CourseEditPage'
 import { PrivateRoute } from './components/PrivateRoute'
 
 function App() {
@@ -21,6 +23,30 @@ function App() {
           element={
             <PrivateRoute>
               <StubPage title="분석 결과" />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/courses"
+          element={
+            <PrivateRoute>
+              <CourseListPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/courses/new"
+          element={
+            <PrivateRoute>
+              <CourseEditPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/courses/:id"
+          element={
+            <PrivateRoute>
+              <CourseEditPage />
             </PrivateRoute>
           }
         />

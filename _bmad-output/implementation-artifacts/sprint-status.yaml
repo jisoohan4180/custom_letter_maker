@@ -34,21 +34,23 @@ epics:
   - id: 2
     title: "과정·멘트 관리"
     goal: "담당자가 과정별 설명과 앞/뒤 고정 멘트를 등록·수정할 수 있다"
-    status: not-started
+    status: done
+    merged_to: develop
+    review_date: 2026-06-17
     stories:
       - id: "2.1"
         title: "과정 목록 조회"
         branch: story/2.1-course-list
-        status: not-started
-        dev: phase-a
-        review: pending
+        status: done
+        dev: claude-code
+        review: done
         retrospective: pending
       - id: "2.2"
         title: "과정 추가 및 수정"
         branch: story/2.2-course-edit
-        status: not-started
-        dev: phase-a
-        review: pending
+        status: done
+        dev: claude-code
+        review: done
         retrospective: pending
 
   - id: 3
