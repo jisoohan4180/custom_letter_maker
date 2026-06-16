@@ -1,5 +1,11 @@
 import os
 import sys
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+# 프로젝트 루트의 .env 를 임포트 시점에 로드 (uvicorn/pytest 어디서 실행해도 동작)
+load_dotenv(Path(__file__).parent.parent.parent / ".env")
 
 _REQUIRED: dict[str, str] = {
     "APP_PASSWORD": "앱 접속 비밀번호",

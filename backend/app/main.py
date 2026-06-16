@@ -1,29 +1,22 @@
 import os
-from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
+# config 임포트 시점에 .env 로드 + 환경변수 검증 (SessionMiddleware 설정 전에 실행)
 from .config import validate_env
-from .database import engine, Base
 from .models import course as _course_models  # noqa: F401
 from .routers import health, auth
 
+validate_env()
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    validate_env()
-    Base.metadata.create_all(bind=engine)
-    yield
-
-
-app = FastAPI(title="HRD 전환 어시스턴트", lifespan=lifespan)
+app = FastAPI(title="HRD 전환 어시스턴트")
 
 app.add_middleware(
     SessionMiddleware,
-    secret_key=os.getenv("SESSION_SECRET_KEY", "dev-only-insecure-change-me"),
+    secret_key=os.environ["SESSION_SECRET_KEY"],
     max_age=8 * 3600,
     https_only=False,
     same_site="lax",

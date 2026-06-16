@@ -1,3 +1,4 @@
+import hmac
 import os
 
 from fastapi import APIRouter, Request
@@ -26,7 +27,7 @@ async def login(req: LoginRequest, request: Request) -> JSONResponse:
         )
 
     app_password = os.getenv("APP_PASSWORD", "")
-    if req.password == app_password:
+    if app_password and hmac.compare_digest(req.password, app_password):
         lockout_tracker.record_success()
         request.session["authenticated"] = True
         return JSONResponse({"ok": True})
