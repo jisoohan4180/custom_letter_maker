@@ -21,3 +21,40 @@ class CourseOut(BaseModel):
     def _none_to_empty(cls, value: str | None) -> str:
         # DB 의 NULL 값을 빈 문자열로 정규화 (프론트엔드는 항상 문자열을 기대)
         return value or ""
+
+
+# 과정 설명 최대 길이 (FR14)
+DESCRIPTION_MAX = 200
+
+
+class CourseCreate(BaseModel):
+    """과정 추가/수정 요청 스키마."""
+
+    name: str
+    description: str = ""
+    front_msg: str = ""
+    back_msg: str = ""
+
+    @field_validator("description", "front_msg", "back_msg", mode="before")
+    @classmethod
+    def _none_to_empty(cls, value: str | None) -> str:
+        return value or ""
+
+    @field_validator("name")
+    @classmethod
+    def _name_required(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("과정명을 입력해주세요")
+        return value
+
+    @field_validator("description")
+    @classmethod
+    def _description_max(cls, value: str) -> str:
+        if len(value) > DESCRIPTION_MAX:
+            raise ValueError(f"과정 설명은 {DESCRIPTION_MAX}자 이내여야 합니다")
+        return value
+
+
+class CourseUpdate(CourseCreate):
+    """과정 수정 요청 스키마 (생성과 동일 필드)."""

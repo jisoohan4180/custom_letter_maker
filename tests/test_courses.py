@@ -118,3 +118,126 @@ def test_list_courses_multiple(auth_client, seed_course):
     res = auth_client.get("/api/v1/courses")
     names = {c["name"] for c in res.json()["courses"]}
     assert names == {"과정A", "과정B"}
+
+
+# --- Story 2.2: 상세 조회 / 추가 / 수정 ---
+
+
+def test_get_course_by_id(auth_client, seed_course):
+    """id 로 과정 상세를 조회한다"""
+    course_id = seed_course(name="AIO1", description="설명", front_msg="앞멘트")
+    res = auth_client.get(f"/api/v1/courses/{course_id}")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["id"] == course_id
+    assert data["name"] == "AIO1"
+    assert data["front_msg"] == "앞멘트"
+
+
+def test_get_course_not_found(auth_client):
+    """없는 과정 조회 시 404"""
+    res = auth_client.get("/api/v1/courses/nonexistent-id")
+    assert res.status_code == 404
+
+
+def test_create_course(auth_client):
+    """과정을 추가하면 201 + 생성된 과정 반환"""
+    res = auth_client.post(
+        "/api/v1/courses",
+        json={"name": "신규과정", "description": "설명", "front_msg": "앞", "back_msg": "뒤"},
+    )
+    assert res.status_code == 201
+    data = res.json()
+    assert data["name"] == "신규과정"
+    assert "id" in data
+    # 실제로 목록에 반영됐는지 확인
+    listed = auth_client.get("/api/v1/courses").json()["courses"]
+    assert any(c["name"] == "신규과정" for c in listed)
+
+
+def test_create_course_minimal(auth_client):
+    """과정명만으로도 추가할 수 있고 멘트는 빈 문자열로 채워진다"""
+    res = auth_client.post("/api/v1/courses", json={"name": "최소과정"})
+    assert res.status_code == 201
+    data = res.json()
+    assert data["description"] == ""
+    assert data["front_msg"] == ""
+
+
+def test_create_course_duplicate_name(auth_client, seed_course):
+    """중복 과정명으로 추가 시 409"""
+    seed_course(name="중복과정")
+    res = auth_client.post("/api/v1/courses", json={"name": "중복과정"})
+    assert res.status_code == 409
+    assert "이미 있는" in res.json()["detail"]
+
+
+def test_create_course_empty_name_rejected(auth_client):
+    """빈 과정명은 422"""
+    res = auth_client.post("/api/v1/courses", json={"name": "   "})
+    assert res.status_code == 422
+
+
+def test_create_course_description_too_long(auth_client):
+    """과정 설명 200자 초과 시 422"""
+    res = auth_client.post("/api/v1/courses", json={"name": "긴설명", "description": "가" * 201})
+    assert res.status_code == 422
+
+
+def test_update_course(auth_client, seed_course):
+    """과정을 수정하면 변경 내용이 반영된다"""
+    course_id = seed_course(name="원본", description="원본설명")
+    res = auth_client.put(
+        f"/api/v1/courses/{course_id}",
+        json={"name": "수정됨", "description": "수정설명", "front_msg": "", "back_msg": ""},
+    )
+    assert res.status_code == 200
+    assert res.json()["name"] == "수정됨"
+    # 재조회로 영속 확인
+    again = auth_client.get(f"/api/v1/courses/{course_id}").json()
+    assert again["name"] == "수정됨"
+    assert again["description"] == "수정설명"
+
+
+def test_update_course_not_found(auth_client):
+    """없는 과정 수정 시 404"""
+    res = auth_client.put("/api/v1/courses/nope", json={"name": "x"})
+    assert res.status_code == 404
+
+
+def test_update_course_duplicate_name(auth_client, seed_course):
+    """다른 과정과 이름이 충돌하면 409"""
+    seed_course(name="과정A")
+    target_id = seed_course(name="과정B")
+    res = auth_client.put(f"/api/v1/courses/{target_id}", json={"name": "과정A"})
+    assert res.status_code == 409
+
+
+def test_update_course_same_name_allowed(auth_client, seed_course):
+    """자기 자신의 이름은 그대로 두고 수정 가능 (자기 충돌 아님)"""
+    course_id = seed_course(name="유지과정", description="old")
+    res = auth_client.put(
+        f"/api/v1/courses/{course_id}", json={"name": "유지과정", "description": "new"}
+    )
+    assert res.status_code == 200
+    assert res.json()["description"] == "new"
+
+
+def test_create_course_requires_auth(client):
+    """세션 없이 과정 추가 시 401"""
+    res = client.post("/api/v1/courses", json={"name": "무인증"})
+    assert res.status_code == 401
+
+
+def test_update_course_requires_auth(client, seed_course):
+    """세션 없이 과정 수정 시 401"""
+    course_id = seed_course(name="보호과정")
+    res = client.put(f"/api/v1/courses/{course_id}", json={"name": "x"})
+    assert res.status_code == 401
+
+
+def test_get_course_requires_auth(client, seed_course):
+    """세션 없이 과정 상세 조회 시 401"""
+    course_id = seed_course(name="보호상세")
+    res = client.get(f"/api/v1/courses/{course_id}")
+    assert res.status_code == 401
