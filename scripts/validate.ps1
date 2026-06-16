@@ -198,10 +198,53 @@ try {
 
   if ($script:ValidateOutputMode -eq "summary") { Write-Host ("[08] {0,-20} " -f "blocking") -NoNewline } else { Write-Host ""; Write-Host "[08] blocking..." }
   $blockingLog = Join-Path $script:ValidateLogDir "08-blocking.log"
-  "Blocking check: PASSED (no promoted patterns)" | Set-Content -LiteralPath $blockingLog
+  $blockingWarnings = 0
+  $blockingMessages = New-Object System.Collections.Generic.List[string]
+
+  # [P1 promoted] Python FastAPI: load_dotenv() 미호출 체크
+  # incident: 2026-06-16-python-dotenv-not-loaded
+  if (Test-Path -LiteralPath "backend") {
+    $pyFiles = @(Get-ChildItem -LiteralPath "backend" -Recurse -File -Include "*.py" -ErrorAction SilentlyContinue |
+      Where-Object { $_.FullName -notmatch '__pycache__|\.pyc|alembic' })
+    if ($pyFiles.Count -gt 0) {
+      $hasLoadDotenv = $pyFiles | Select-String -Pattern "load_dotenv" -ErrorAction SilentlyContinue
+      if (-not $hasLoadDotenv) {
+        $blockingWarnings += 1
+        $blockingMessages.Add("WARNING [P1]: backend/ Python 소스에 load_dotenv() 호출이 없습니다.")
+        $blockingMessages.Add("  .env 파일이 프로덕션에서 로드되지 않습니다.")
+        $blockingMessages.Add("  참고: feedback/incidents/2026-06-16-python-dotenv-not-loaded.md")
+      }
+    }
+  }
+
+  # [P6 promoted] Alembic + Base.metadata.create_all() 공존 체크
+  # incident: 2026-06-16-alembic-and-create-all-conflict
+  if ((Test-Path -LiteralPath "backend/alembic") -and (Test-Path -LiteralPath "backend/app")) {
+    $appFiles = @(Get-ChildItem -LiteralPath "backend/app" -Recurse -File -Include "*.py" -ErrorAction SilentlyContinue)
+    $hasCreateAll = $appFiles | Select-String -Pattern "\.metadata\.create_all\(" -ErrorAction SilentlyContinue |
+      Where-Object { $_.Line -notmatch '#' }
+    if ($hasCreateAll) {
+      $blockingWarnings += 1
+      $blockingMessages.Add("WARNING [P6]: backend/alembic/ 존재 시 Base.metadata.create_all() 앱 코드 금지.")
+      $blockingMessages.Add("  Alembic과 create_all 공존은 마이그레이션 버전 추적 충돌을 유발합니다.")
+      $blockingMessages.Add("  참고: feedback/incidents/2026-06-16-alembic-and-create-all-conflict.md")
+      $hasCreateAll | ForEach-Object { $blockingMessages.Add("  " + $_.ToString()) }
+    }
+  }
+
+  if ($blockingWarnings -eq 0) {
+    $blockingMessages.Add("Blocking check: PASSED")
+  } else {
+    $blockingMessages.Add("Blocking check: $blockingWarnings warning(s) found")
+  }
+  $blockingMessages | Set-Content -LiteralPath $blockingLog
   $script:ValidateTotalSteps += 1
   $script:ValidatePassedSteps += 1
-  if ($script:ValidateOutputMode -eq "summary") { Write-Host "PASSED" } else { Get-Content -LiteralPath $blockingLog }
+  if ($script:ValidateOutputMode -eq "summary") {
+    if ($blockingWarnings -eq 0) { Write-Host "PASSED" } else { Write-Host "WARN ($blockingWarnings warning(s)) - log: $blockingLog" }
+  } else {
+    Get-Content -LiteralPath $blockingLog
+  }
 
   $exitCode = Complete-HarnessValidation
   exit $exitCode
