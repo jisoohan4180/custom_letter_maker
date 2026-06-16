@@ -19,6 +19,10 @@ COHORT_COLUMN = "기수"
 
 CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-haiku-4-5")
 HRD_REGISTER_URL = os.getenv("HRD_REGISTER_URL", "https://hrd.example.com/register")
+# 외부 API 호출 timeout (초) — 한 명이 hang 돼도 다음으로 빨리 넘어가도록
+CLAUDE_TIMEOUT = float(os.getenv("CLAUDE_TIMEOUT", "30"))
+# 한 번에 분석할 지원자 수 상한 (무바운드 순차 호출/비용 폭증 방지)
+MAX_APPLICANTS = int(os.getenv("MAX_APPLICANTS", "500"))
 
 # Claude 강제 도구 호출용 스키마 — 4항목 분석 + 이탈사유 + 멘트 본문
 ANALYSIS_TOOL = {
@@ -113,8 +117,8 @@ def _row(applicant: dict, course: CourseInfo, fields: dict | None, failed: bool)
         "course_confidence": (fields or {}).get("course_confidence", ""),
         "decision_state": (fields or {}).get("decision_state", ""),
         "real_constraint": (fields or {}).get("real_constraint", ""),
-        "churn_reason": (fields or {}).get("churn_reason", "분석 실패") if not failed else "분석 실패",
-        "message": compose_message(course, (fields or {}).get("message_body", "")) if not failed else "",
+        "churn_reason": "분석 실패" if failed else (fields or {}).get("churn_reason", ""),
+        "message": "" if failed else compose_message(course, (fields or {}).get("message_body", "")),
         "failed": failed,
     }
 
@@ -130,11 +134,21 @@ def iter_analysis_events(
     각 지원자를 1명씩 분석하고, 실패해도 다음 지원자를 계속 진행한다 (FR17).
     마지막에 전체 결과 rows를 담은 done 이벤트를 낸다.
     """
-    applicants = parse_csv(applicant_bytes)
-    interviews = parse_csv(interview_bytes)
+    try:
+        applicants = parse_csv(applicant_bytes)
+        interviews = parse_csv(interview_bytes)
+    except Exception:
+        # 깨진/빈 CSV 등 파싱 실패 — 일반화된 에러 이벤트 (상세는 노출 안 함)
+        yield {"type": "error", "message": "CSV 형식을 확인해주세요"}
+        return
+
     matched, unmatched = match_applicants(applicants, interviews)
 
     total = len(matched) + len(unmatched)
+    if total > MAX_APPLICANTS:
+        yield {"type": "error", "message": f"지원자가 너무 많습니다 (최대 {MAX_APPLICANTS}명)"}
+        return
+
     rows: list[dict] = []
     done = 0
 
@@ -199,7 +213,7 @@ def make_claude_analyzer() -> Analyzer:
     import anthropic
 
     # 프로젝트는 CLAUDE_API_KEY 를 사용하므로 명시적으로 주입 (SDK 기본은 ANTHROPIC_API_KEY)
-    client = anthropic.Anthropic(api_key=os.environ["CLAUDE_API_KEY"])
+    client = anthropic.Anthropic(api_key=os.environ["CLAUDE_API_KEY"], timeout=CLAUDE_TIMEOUT)
 
     def analyze(applicant: dict, interview: dict, course: CourseInfo) -> dict:
         applicant_text = "\n".join(f"{k}: {v}" for k, v in applicant.items())

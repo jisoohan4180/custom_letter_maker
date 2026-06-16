@@ -67,4 +67,42 @@ describe('runAnalysisStream', () => {
     await runAnalysisStream(new FormData(), { onProgress: vi.fn(), onDone: vi.fn(), onError })
     expect(onError).toHaveBeenCalledWith('과정을 찾을 수 없습니다')
   })
+
+  it('error 이벤트를 onError로 라우팅한다', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      status: 200,
+      body: sseBody([{ type: 'error', message: 'CSV 형식을 확인해주세요' }]),
+    } as Response)
+
+    const onError = vi.fn()
+    const onDone = vi.fn()
+    await runAnalysisStream(new FormData(), { onProgress: vi.fn(), onDone, onError })
+    expect(onError).toHaveBeenCalledWith('CSV 형식을 확인해주세요')
+    expect(onDone).not.toHaveBeenCalled()
+  })
+
+  it('done 없이 스트림이 끝나면 onError를 호출한다 (무한 스피너 방지)', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      status: 200,
+      body: sseBody([{ type: 'progress', current: 1, total: 2 }]), // done 없음
+    } as Response)
+
+    const onError = vi.fn()
+    const onDone = vi.fn()
+    await runAnalysisStream(new FormData(), { onProgress: vi.fn(), onDone, onError })
+    expect(onDone).not.toHaveBeenCalled()
+    expect(onError).toHaveBeenCalledWith('분석이 완료되지 않았습니다. 다시 시도해주세요')
+  })
+
+  it('AbortError(취소)는 onError를 호출하지 않는다', async () => {
+    vi.spyOn(globalThis, 'fetch').mockRejectedValue(
+      Object.assign(new Error('aborted'), { name: 'AbortError' }),
+    )
+
+    const onError = vi.fn()
+    await runAnalysisStream(new FormData(), { onProgress: vi.fn(), onDone: vi.fn(), onError })
+    expect(onError).not.toHaveBeenCalled()
+  })
 })

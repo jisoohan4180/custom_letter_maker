@@ -3,6 +3,7 @@ import type { AnalysisRow } from './analysis'
 export type AnalysisEvent =
   | { type: 'progress'; current: number; total: number }
   | { type: 'done'; rows: AnalysisRow[] }
+  | { type: 'error'; message: string }
 
 export interface StreamHandlers {
   onProgress: (current: number, total: number) => void
@@ -47,6 +48,7 @@ export async function runAnalysisStream(
   const reader = res.body.getReader()
   const decoder = new TextDecoder()
   let buffer = ''
+  let gotTerminal = false
 
   try {
     for (;;) {
@@ -58,10 +60,19 @@ export async function runAnalysisStream(
       for (const chunk of chunks) {
         const event = parseSseChunk(chunk)
         if (!event) continue
-        if (event.type === 'progress') handlers.onProgress(event.current, event.total)
-        else if (event.type === 'done') handlers.onDone(event.rows)
+        if (event.type === 'progress') {
+          handlers.onProgress(event.current, event.total)
+        } else if (event.type === 'done') {
+          gotTerminal = true
+          handlers.onDone(event.rows)
+        } else if (event.type === 'error') {
+          gotTerminal = true
+          handlers.onError(event.message)
+        }
       }
     }
+    // 스트림이 done/error 없이 끊기면 무한 스피너 방지
+    if (!gotTerminal) handlers.onError('분석이 완료되지 않았습니다. 다시 시도해주세요')
   } catch (err) {
     if ((err as Error).name !== 'AbortError') handlers.onError('분석 중 오류가 발생했습니다')
   }

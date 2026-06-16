@@ -5,12 +5,12 @@ import { AnalysisPage } from '../pages/AnalysisPage'
 import { loadStoredAnalysis } from '../lib/results'
 import type { Course } from '../lib/courses'
 
-function sseBody(events: object[]): ReadableStream<Uint8Array> {
+function sseBody(events: object[], close = true): ReadableStream<Uint8Array> {
   const enc = new TextEncoder()
   return new ReadableStream({
     start(controller) {
       for (const e of events) controller.enqueue(enc.encode(`data: ${JSON.stringify(e)}\n\n`))
-      controller.close()
+      if (close) controller.close()
     },
   })
 }
@@ -20,6 +20,15 @@ function mockStream(events: object[]) {
     ok: true,
     status: 200,
     body: sseBody(events),
+  } as Response)
+}
+
+// 진행 중 상태(스트림 미종료)를 시뮬레이션 — done 없이 열려 있는 스트림
+function mockStreamOpen(events: object[]) {
+  vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+    ok: true,
+    status: 200,
+    body: sseBody(events, false),
   } as Response)
 }
 
@@ -78,10 +87,18 @@ describe('AnalysisPage', () => {
   })
 
   it('진행률 "N명 중 M번째 분석 중"을 표시한다', async () => {
-    mockStream([{ type: 'progress', current: 1, total: 3 }])
+    mockStreamOpen([{ type: 'progress', current: 1, total: 3 }])
     renderAnalysis(navState())
     await waitFor(() => {
       expect(screen.getByText('3명 중 1번째 분석 중...')).toBeTruthy()
+    })
+  })
+
+  it('진행 중 예상 완료 시간을 표시한다 (AC 3.2)', async () => {
+    mockStreamOpen([{ type: 'progress', current: 1, total: 3 }])
+    renderAnalysis(navState())
+    await waitFor(() => {
+      expect(screen.getByText(/예상 약 \d+초 남음/)).toBeTruthy()
     })
   })
 
@@ -100,7 +117,7 @@ describe('AnalysisPage', () => {
   })
 
   it('분석 취소 클릭 시 확인 팝업이 표시된다', async () => {
-    mockStream([{ type: 'progress', current: 1, total: 3 }])
+    mockStreamOpen([{ type: 'progress', current: 1, total: 3 }])
     renderAnalysis(navState())
     await waitFor(() => screen.getByText('3명 중 1번째 분석 중...'))
     fireEvent.click(screen.getByRole('button', { name: '분석 취소' }))

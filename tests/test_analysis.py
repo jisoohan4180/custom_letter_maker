@@ -100,6 +100,45 @@ def test_iter_analysis_events_unmatched_marked_failed():
     assert by_name["매칭없음"]["churn_reason"] == "분석 실패"
 
 
+def test_iter_analysis_events_empty_csv_total_zero():
+    """헤더만 있는 빈 CSV는 progress 없이 done(rows=[])만 낸다 (total=0 경계)"""
+    apps = "이름,연락처".encode("utf-8")  # 데이터 행 0개
+    ints = "이름,점수".encode("utf-8")
+    events = list(iter_analysis_events(apps, ints, _course(), _fake_analyze))
+    assert [e["type"] for e in events] == ["done"]
+    assert events[0]["rows"] == []
+
+
+def test_iter_analysis_events_parse_error_yields_error():
+    """깨진/빈 바이트로 파싱 실패 시 error 이벤트를 낸다 (raw 예외 비노출)"""
+    events = list(iter_analysis_events(b"", b"", _course(), _fake_analyze))
+    assert events == [{"type": "error", "message": "CSV 형식을 확인해주세요"}]
+
+
+def test_iter_analysis_events_too_many_applicants(monkeypatch):
+    """MAX_APPLICANTS 초과 시 분석을 시작하지 않고 error 이벤트를 낸다"""
+    monkeypatch.setattr(analysis_service, "MAX_APPLICANTS", 1)
+    apps = "이름\n홍길동\n김철수".encode("utf-8")
+    ints = "이름\n홍길동\n김철수".encode("utf-8")
+    events = list(iter_analysis_events(apps, ints, _course(), _fake_analyze))
+    assert events[0]["type"] == "error"
+    assert "너무 많습니다" in events[0]["message"]
+
+
+def test_build_excel_empty_rows_header_only():
+    """0행이어도 헤더만 있는 유효한 엑셀을 만든다"""
+    import io as _io
+
+    from openpyxl import load_workbook
+
+    from backend.app.services.analysis_service import build_excel
+
+    wb = load_workbook(_io.BytesIO(build_excel([])))
+    ws = wb.active
+    assert ws.max_row == 1  # 헤더 행만
+    assert ws[1][0].value == "기수"
+
+
 def test_iter_analysis_events_failure_continues():
     def flaky(applicant, interview, course):
         if applicant["이름"] == "실패자":
@@ -197,6 +236,24 @@ def test_start_course_not_found(auth_client):
         "/api/v1/analysis/start", data={"course_id": "nope"}, files=_files()
     )
     assert res.status_code == 404
+
+
+def test_start_rejects_oversized_upload(auth_client, seed_course, monkeypatch):
+    """업로드 CSV가 상한을 넘으면 413"""
+    from backend.app.routers import analysis as analysis_router
+
+    monkeypatch.setattr(analysis_router, "MAX_UPLOAD_BYTES", 10)
+    cid = seed_course()
+    big = ("이름,연락처\n" + "홍길동,010\n" * 100).encode("utf-8")
+    res = auth_client.post(
+        "/api/v1/analysis/start",
+        data={"course_id": cid},
+        files={
+            "applicant_csv": ("a.csv", big, "text/csv"),
+            "interview_csv": ("b.csv", big, "text/csv"),
+        },
+    )
+    assert res.status_code == 413
 
 
 def test_start_streams_progress_and_done(auth_client, seed_course):

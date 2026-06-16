@@ -87,6 +87,7 @@ CREATE TABLE courses (
 
 ### Analysis
 - `POST /api/v1/analysis/start` — 분석 시작 (SSE 스트림 반환)
+- `POST /api/v1/analysis/excel` — 분석 결과 엑셀(xlsx) 다운로드
 
 ### Health
 - `GET /healthz` — liveness

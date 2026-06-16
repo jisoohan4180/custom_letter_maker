@@ -17,9 +17,11 @@ export function AnalysisPage() {
   const state = location.state as AnalysisNavState | null
 
   const [progress, setProgress] = useState({ current: 0, total: 0 })
+  const [etaSeconds, setEtaSeconds] = useState<number | null>(null)
   const [error, setError] = useState('')
   const [showCancel, setShowCancel] = useState(false)
   const abortRef = useRef<AbortController | null>(null)
+  const startRef = useRef(0)
 
   useEffect(() => {
     if (!state || !state.applicantFile || !state.interviewFile || !state.course) {
@@ -29,6 +31,7 @@ export function AnalysisPage() {
 
     const controller = new AbortController()
     abortRef.current = controller
+    startRef.current = Date.now()
 
     const body = new FormData()
     body.append('course_id', state.course.id)
@@ -38,7 +41,14 @@ export function AnalysisPage() {
     runAnalysisStream(
       body,
       {
-        onProgress: (current, total) => setProgress({ current, total }),
+        onProgress: (current, total) => {
+          setProgress({ current, total })
+          // 완료된 인원의 평균 소요시간으로 남은 시간 추정 (예상 완료 시간)
+          if (current > 0) {
+            const avgMs = (Date.now() - startRef.current) / current
+            setEtaSeconds(Math.max(1, Math.round((avgMs * (total - current)) / 1000)))
+          }
+        },
         onDone: rows => {
           saveStoredAnalysis({
             analyzed_at: new Date().toISOString(),
@@ -92,7 +102,8 @@ export function AnalysisPage() {
             </p>
             {total > 0 && (
               <p className="text-sm text-gray-400 mt-2">
-                남은 지원자 약 {remaining}명 · 잠시만 기다려주세요
+                남은 지원자 약 {remaining}명
+                {etaSeconds !== null && ` · 예상 약 ${etaSeconds}초 남음`}
               </p>
             )}
             <button

@@ -61,13 +61,24 @@ describe('ResultsPage', () => {
     expect(screen.getByText(/1명 분석 실패/)).toBeTruthy()
   })
 
-  it('멘트를 클릭하면 전문 팝업이 열린다', () => {
+  it('멘트를 클릭하면 전문(원문 전체) 팝업이 열린다', () => {
     seed([row()])
     renderResults()
     const cell = screen.getByText(/안녕하세요 홍길동님/)
     fireEvent.click(cell)
     const dialog = screen.getByRole('dialog', { name: /멘트 전문/ })
     expect(dialog).toBeTruthy()
+    // 모달에는 절단되지 않은 원문 전체가 보여야 한다
+    expect(dialog.textContent).toContain('꼭 등록 부탁드립니다.')
+  })
+
+  it('30자 이하 멘트는 말줄임표 없이, 31자 이상은 말줄임표와 함께 표시된다', () => {
+    const exact30 = '가'.repeat(30)
+    const over31 = '나'.repeat(31)
+    seed([row({ name: 'A', message: exact30 }), row({ name: 'B', message: over31 })])
+    renderResults()
+    expect(screen.getByText(exact30)).toBeTruthy() // 말줄임표 없음
+    expect(screen.getByText(`${'나'.repeat(30)}…`)).toBeTruthy() // 30자 + 말줄임표
   })
 
   it('결과 삭제 확인 시 로컬스토리지를 비우고 업로드로 이동한다', async () => {
