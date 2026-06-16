@@ -249,6 +249,21 @@ try {
     }
   }
 
+  # [Epic3 promoted] anthropic 클라이언트 timeout 누락 체크
+  # incident: 2026-06-17-external-api-no-timeout
+  if (Test-Path -LiteralPath "backend") {
+    $anthropicFiles = @(Get-ChildItem -LiteralPath "backend" -Recurse -File -Include "*.py" -ErrorAction SilentlyContinue |
+      Where-Object { $_.FullName -notmatch '__pycache__' })
+    foreach ($pyFile in $anthropicFiles) {
+      $raw = Get-Content -LiteralPath $pyFile.FullName -Raw
+      if (($raw -match 'anthropic\.(Async)?Anthropic\(') -and ($raw -notmatch 'timeout')) {
+        $blockingWarnings += 1
+        $blockingMessages.Add("WARNING [perf]: $($pyFile.Name) 가 anthropic 클라이언트를 timeout 없이 생성합니다.")
+        $blockingMessages.Add("  외부 API 호출에 timeout 을 설정하세요 (performance-rules.md).")
+      }
+    }
+  }
+
   if ($blockingWarnings -eq 0) {
     $blockingMessages.Add("Blocking check: PASSED")
   } else {

@@ -60,6 +60,7 @@ epics:
     status: done
     merged_to: develop
     review_date: 2026-06-17
+    retrospective_date: 2026-06-17
     stories:
       - id: "3.1"
         title: "CSV 업로드 + 과정 선택 화면"
@@ -67,18 +68,18 @@ epics:
         status: done
         dev: claude-code
         review: done
-        retrospective: pending
+        retrospective: done
       - id: "3.2"
         title: "AI 분석 백엔드 + 실시간 진행률"
         branch: story/3.2-ai-analysis
         status: done
         dev: claude-code
         review: done
-        retrospective: pending
+        retrospective: done
       - id: "3.3"
         title: "결과 확인 + 엑셀 다운로드"
         branch: story/3.2-ai-analysis
         status: done
         dev: claude-code
         review: done
-        retrospective: pending
+        retrospective: done
