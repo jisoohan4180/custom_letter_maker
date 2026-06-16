@@ -17,13 +17,19 @@ try {
 
   $baseRef = $env:VALIDATE_BASE_REF
   if ([string]::IsNullOrWhiteSpace($baseRef)) {
+    # 존재하지 않는 ref(예: 원격 미설정으로 origin/develop 부재) 프로브 시
+    # git 이 stderr 를 쓰면 PowerShell 5.1 + ErrorActionPreference=Stop 에서
+    # 종료 오류로 승격된다. --quiet 로 stderr 를 막고, 프로브 구간만 Continue 로 낮춘다.
+    $prevEAP = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
     foreach ($ref in @("origin/develop", "develop", "origin/main", "main")) {
-      & git rev-parse --verify $ref *> $null
+      & git rev-parse --verify --quiet $ref *> $null
       if ($LASTEXITCODE -eq 0) {
         $baseRef = $ref
         break
       }
     }
+    $ErrorActionPreference = $prevEAP
   }
 
   $hasPackageJson = Test-HarnessPackageJson
