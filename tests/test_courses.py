@@ -184,6 +184,22 @@ def test_create_course_description_too_long(auth_client):
     assert res.status_code == 422
 
 
+def test_create_course_description_exactly_200_accepted(auth_client):
+    """과정 설명 정확히 200자는 허용(포함 경계)되고 그대로 저장된다"""
+    desc = "가" * 200
+    res = auth_client.post("/api/v1/courses", json={"name": "경계200", "description": desc})
+    assert res.status_code == 201
+    assert res.json()["description"] == desc
+
+
+def test_create_course_message_too_long(auth_client):
+    """앞/뒤 고정 멘트가 상한(2000자)을 초과하면 422"""
+    res = auth_client.post(
+        "/api/v1/courses", json={"name": "긴멘트", "front_msg": "가" * 2001}
+    )
+    assert res.status_code == 422
+
+
 def test_update_course(auth_client, seed_course):
     """과정을 수정하면 변경 내용이 반영된다"""
     course_id = seed_course(name="원본", description="원본설명")
@@ -221,6 +237,15 @@ def test_update_course_same_name_allowed(auth_client, seed_course):
     )
     assert res.status_code == 200
     assert res.json()["description"] == "new"
+
+
+def test_update_course_description_too_long(auth_client, seed_course):
+    """수정 경로(PUT)에서도 과정 설명 200자 초과 시 422 (검증 회귀 방지)"""
+    course_id = seed_course(name="수정길이", description="old")
+    res = auth_client.put(
+        f"/api/v1/courses/{course_id}", json={"name": "수정길이", "description": "가" * 201}
+    )
+    assert res.status_code == 422
 
 
 def test_create_course_requires_auth(client):

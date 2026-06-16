@@ -25,6 +25,8 @@ class CourseOut(BaseModel):
 
 # 과정 설명 최대 길이 (FR14)
 DESCRIPTION_MAX = 200
+# 앞/뒤 고정 멘트 최대 길이 (무제한 입력으로 인한 저장 abuse 방지)
+MESSAGE_MAX = 2000
 
 
 class CourseCreate(BaseModel):
@@ -53,6 +55,13 @@ class CourseCreate(BaseModel):
     def _description_max(cls, value: str) -> str:
         if len(value) > DESCRIPTION_MAX:
             raise ValueError(f"과정 설명은 {DESCRIPTION_MAX}자 이내여야 합니다")
+        return value
+
+    @field_validator("front_msg", "back_msg")
+    @classmethod
+    def _message_max(cls, value: str) -> str:
+        if len(value) > MESSAGE_MAX:
+            raise ValueError(f"고정 멘트는 {MESSAGE_MAX}자 이내여야 합니다")
         return value
 
 

@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { CourseEditPage } from '../pages/CourseEditPage'
@@ -98,5 +98,32 @@ describe('CourseEditPage', () => {
     fireEvent.change(nameInput(), { target: { value: '수정중' } })
     fireEvent.click(screen.getByText('← 과정 목록으로 돌아가기'))
     expect(screen.getByText('저장하지 않고 나가시겠습니까?')).toBeTruthy()
+  })
+
+  it('멘트 미리보기는 앞/뒤 고정 멘트 + AI 본문 + HRD 링크를 조합해 표시한다', () => {
+    setFetch(() => json({}))
+    renderAt('/courses/new')
+    fireEvent.change(
+      screen.getByPlaceholderText('멘트 맨 앞에 항상 붙는 문구'),
+      { target: { value: '안녕하세요 OOO님' } },
+    )
+    fireEvent.change(
+      screen.getByPlaceholderText('멘트 맨 뒤에 항상 붙는 문구'),
+      { target: { value: '꼭 등록 부탁드립니다' } },
+    )
+    fireEvent.click(screen.getByRole('button', { name: '멘트 미리보기' }))
+    const dialog = screen.getByRole('dialog', { name: '멘트 미리보기' })
+    expect(within(dialog).getByText(/안녕하세요 OOO님/)).toBeTruthy()
+    expect(within(dialog).getByText(/꼭 등록 부탁드립니다/)).toBeTruthy()
+    expect(within(dialog).getByText(/HRD 등록 링크/)).toBeTruthy()
+  })
+
+  it('앞/뒤 고정 멘트가 비어도 미리보기에 AI 본문과 HRD 링크는 표시된다', () => {
+    setFetch(() => json({}))
+    renderAt('/courses/new')
+    fireEvent.click(screen.getByRole('button', { name: '멘트 미리보기' }))
+    const dialog = screen.getByRole('dialog', { name: '멘트 미리보기' })
+    expect(within(dialog).getByText(/AI 개인화 본문/)).toBeTruthy()
+    expect(within(dialog).getByText(/HRD 등록 링크/)).toBeTruthy()
   })
 })

@@ -58,7 +58,8 @@ export function CourseEditPage() {
   }
 
   const descriptionOver = form.description.length > DESCRIPTION_LIMIT
-  const canSave = form.name.trim().length > 0 && !descriptionOver && !saving
+  // 저장 성공 후 토스트가 떠 있는 2초 동안에도 재제출을 막는다 (중복 POST/PUT 방지)
+  const canSave = form.name.trim().length > 0 && !descriptionOver && !saving && !showToast
 
   async function handleSave() {
     if (!canSave) return
