@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { LoginPage } from './pages/LoginPage'
 import { StubPage } from './pages/StubPage'
+import { UploadPage } from './pages/UploadPage'
 import { CourseListPage } from './pages/CourseListPage'
 import { CourseEditPage } from './pages/CourseEditPage'
 import { PrivateRoute } from './components/PrivateRoute'
@@ -14,7 +15,15 @@ function App() {
           path="/upload"
           element={
             <PrivateRoute>
-              <StubPage title="CSV 업로드" />
+              <UploadPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/analysis"
+          element={
+            <PrivateRoute>
+              <StubPage title="분석 진행 중" />
             </PrivateRoute>
           }
         />
