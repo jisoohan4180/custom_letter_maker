@@ -214,3 +214,72 @@ def test_start_streams_progress_and_done(auth_client, seed_course):
     done = [e for e in events if e["type"] == "done"]
     assert len(done) == 1
     assert done[0]["rows"][0]["name"] == "홍길동"
+
+
+# --- 엑셀 (Story 3.3) ---
+
+
+def _result_row(name="홍길동", failed=False):
+    return {
+        "cohort": "1기",
+        "name": name,
+        "phone": "010",
+        "job_understanding": "높음",
+        "course_confidence": "중간",
+        "decision_state": "고민",
+        "real_constraint": "없음",
+        "churn_reason": "분석 실패" if failed else "비용 부담",
+        "message": "" if failed else "안녕하세요",
+        "failed": failed,
+    }
+
+
+def test_build_excel_headers_and_values():
+    import io as _io
+
+    from openpyxl import load_workbook
+
+    from backend.app.services.analysis_service import build_excel
+
+    content = build_excel([_result_row()])
+    wb = load_workbook(_io.BytesIO(content))
+    ws = wb.active
+    headers = [c.value for c in ws[1]]
+    assert headers[0] == "기수"
+    assert "권장 독려문자멘트" in headers
+    assert ws[2][1].value == "홍길동"
+
+
+def test_build_excel_failed_row_red():
+    import io as _io
+
+    from openpyxl import load_workbook
+
+    from backend.app.services.analysis_service import build_excel
+
+    content = build_excel([_result_row(failed=True)])
+    wb = load_workbook(_io.BytesIO(content))
+    ws = wb.active
+    # 2행(첫 데이터 행)이 빨간 채움이어야 한다
+    assert ws[2][0].fill.start_color.rgb.endswith("FFC7CE")
+
+
+def test_excel_requires_auth(client):
+    res = client.post(
+        "/api/v1/analysis/excel",
+        json={"course_name": "AIO1", "analyzed_at": "", "rows": [_result_row()]},
+    )
+    assert res.status_code == 401
+
+
+def test_excel_downloads_with_filename(auth_client):
+    res = auth_client.post(
+        "/api/v1/analysis/excel",
+        json={"course_name": "AIO1", "analyzed_at": "2026-06-17T09:23:00", "rows": [_result_row()]},
+    )
+    assert res.status_code == 200
+    assert "spreadsheetml" in res.headers["content-type"]
+    disposition = res.headers["content-disposition"]
+    assert "filename*=UTF-8''" in disposition
+    assert "20260617" in disposition  # 날짜 반영
+    assert len(res.content) > 0

@@ -9,6 +9,8 @@ from dataclasses import dataclass
 from typing import Callable, Iterator
 
 import pandas as pd
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill
 
 # 이름 컬럼을 매칭 키로 사용 (TRD: 이름 기준 자동 매칭)
 NAME_COLUMN = "이름"
@@ -153,6 +155,43 @@ def iter_analysis_events(
         yield {"type": "progress", "current": done, "total": total}
 
     yield {"type": "done", "rows": rows}
+
+
+# 엑셀 출력 컬럼 (AC 3.3) 과 AnalysisRow 키 매핑
+EXCEL_COLUMNS: list[tuple[str, str]] = [
+    ("기수", "cohort"),
+    ("이름", "name"),
+    ("연락처", "phone"),
+    ("AI/직무이해도", "job_understanding"),
+    ("과정확신도", "course_confidence"),
+    ("의사결정상태", "decision_state"),
+    ("현실제약", "real_constraint"),
+    ("이탈예측사유", "churn_reason"),
+    ("권장 독려문자멘트", "message"),
+]
+_RED_FILL = PatternFill(start_color="FFC7CE", end_color="FFC7CE", fill_type="solid")
+
+
+def build_excel(rows: list[dict]) -> bytes:
+    """분석 결과를 xlsx 바이트로 만든다. 분석 실패 행은 빨간 배경(PatternFill)."""
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "독려문자"
+
+    headers = [label for label, _ in EXCEL_COLUMNS]
+    sheet.append(headers)
+    for cell in sheet[1]:
+        cell.font = Font(bold=True)
+
+    for row in rows:
+        sheet.append([str(row.get(key, "")) for _, key in EXCEL_COLUMNS])
+        if row.get("failed"):
+            for cell in sheet[sheet.max_row]:
+                cell.fill = _RED_FILL
+
+    buffer = io.BytesIO()
+    workbook.save(buffer)
+    return buffer.getvalue()
 
 
 def make_claude_analyzer() -> Analyzer:

@@ -1,8 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { LoginPage } from './pages/LoginPage'
-import { StubPage } from './pages/StubPage'
 import { UploadPage } from './pages/UploadPage'
 import { AnalysisPage } from './pages/AnalysisPage'
+import { ResultsPage } from './pages/ResultsPage'
 import { CourseListPage } from './pages/CourseListPage'
 import { CourseEditPage } from './pages/CourseEditPage'
 import { PrivateRoute } from './components/PrivateRoute'
@@ -32,7 +32,7 @@ function App() {
           path="/results"
           element={
             <PrivateRoute>
-              <StubPage title="분석 결과" />
+              <ResultsPage />
             </PrivateRoute>
           }
         />
