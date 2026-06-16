@@ -57,26 +57,28 @@ epics:
   - id: 3
     title: "CSV 분석 + 엑셀 다운로드"
     goal: "담당자가 CSV 두 개를 올리면 AI가 개인화 독려 멘트가 담긴 엑셀을 자동 생성해준다"
-    status: not-started
+    status: done
+    merged_to: develop
+    review_date: 2026-06-17
     stories:
       - id: "3.1"
         title: "CSV 업로드 + 과정 선택 화면"
         branch: story/3.1-csv-upload
-        status: not-started
-        dev: phase-a
-        review: pending
+        status: done
+        dev: claude-code
+        review: done
         retrospective: pending
       - id: "3.2"
         title: "AI 분석 백엔드 + 실시간 진행률"
         branch: story/3.2-ai-analysis
-        status: not-started
-        dev: phase-a
-        review: pending
+        status: done
+        dev: claude-code
+        review: done
         retrospective: pending
       - id: "3.3"
         title: "결과 확인 + 엑셀 다운로드"
-        branch: story/3.3-results-excel
-        status: not-started
-        dev: phase-a
-        review: pending
+        branch: story/3.2-ai-analysis
+        status: done
+        dev: claude-code
+        review: done
         retrospective: pending
