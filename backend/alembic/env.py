@@ -17,6 +17,7 @@ if _env_file.exists():
     load_dotenv(_env_file)
 
 # 모델 임포트 (autogenerate 지원)
+from backend.app.config import get_db_path  # noqa: E402
 from backend.app.database import Base  # noqa: E402
 from backend.app.models import course as _  # noqa: E402, F401
 
@@ -29,10 +30,11 @@ target_metadata = Base.metadata
 
 
 def _get_url() -> str:
-    raw = os.getenv("DB_PATH", "~/hrd-data/hrd.db")
-    expanded = os.path.expanduser(raw)
-    os.makedirs(os.path.dirname(os.path.abspath(expanded)), exist_ok=True)
-    return f"sqlite:///{expanded}"
+    # 앱(backend.app.config.get_db_path)과 동일한 경로 해석을 단일 소스로 사용해
+    # alembic(backend/)과 앱(루트)의 cwd 차이로 인한 DB 불일치를 방지한다.
+    path = get_db_path()
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    return f"sqlite:///{path}"
 
 
 def run_migrations_offline() -> None:

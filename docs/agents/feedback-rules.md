@@ -52,6 +52,11 @@
 - 발견: Epic 3 Phase B — 업로드 CSV 크기·행 수 무제한 → 메모리 고갈 + 행 수만큼 Claude 호출로 비용 폭증
 - 규칙: 사용자가 제어하는 모든 입력(업로드 파일·요청 배열)에 환경변수 기반 상한을 둔다. 파일 크기 초과 시 413, 처리 항목 수 초과 시 거부, pydantic `Field(max_length=...)`로 배열 길이 제한.
 
+### 9. 경로 해석은 cwd 비의존 + 단일 소스 + smoke 필수 (cwd-independent-path-and-smoke)
+- source: 2026-06-17-relative-db-path-cwd-mismatch
+- 발견: 배포 점검(smoke) — `DB_PATH=./hrd.db` 상대경로가 alembic(backend/)과 앱(루트)의 cwd 차이로 다른 파일을 가리켜 `no such table: courses` 500. 단위 테스트(in-memory)는 못 잡고 smoke에서만 드러남.
+- 규칙: (1) DB/파일 경로는 cwd 비의존으로 해석한다 — 상대경로는 프로젝트 루트 기준 anchor + abspath. (2) 경로 해석은 단일 소스 함수로 두고 마이그레이션도 이를 import한다. (3) Epic/배포 완료 판정 전 smoke(실서버 기동 + 인증 후 DB 엔드포인트 호출)를 반드시 실행한다 — 단위 테스트만으로는 alembic/실DB 경로 불일치를 못 잡는다.
+
 ## Retired Rules
 
 2 Epic(Epic 2·3) 연속 재발 없음 + Phase A가 Codex → Claude Code로 전환되어 retire:
