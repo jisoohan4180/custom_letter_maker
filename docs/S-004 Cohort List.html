@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>S-004 Cohort List — Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #ffffff;
+      --border:   #e4e4e7;
+      --text-1:   #18181b;
+      --text-2:   #71717a;
+      --text-3:   #a1a1aa;
+      --hover-bg: #fafafa;
+      --radius:   6px;
+      --green:    #22c55e;
+      --yellow:   #eab308;
+      --red:      #ef4444;
+    }
+
+    html, body {
+      width: 100%;
+      min-height: 100%;
+      background: var(--bg);
+      font-family: 'Noto Sans KR', sans-serif;
+      color: var(--text-1);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .page {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 80px 24px 80px;
+    }
+
+    /* ── Page header ── */
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 32px;
+    }
+
+    .page-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-1);
+      letter-spacing: -0.3px;
+    }
+
+    .btn-new {
+      height: 36px;
+      padding: 0 14px;
+      background: var(--text-1);
+      color: #ffffff;
+      border: none;
+      border-radius: var(--radius);
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.12s;
+      white-space: nowrap;
+    }
+    .btn-new:hover { background: #27272a; }
+
+    /* ── Section labels ── */
+    .section-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-2);
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .section-label + .cohort-list { margin-top: 0; }
+
+    /* ── Card list ── */
+    .cohort-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .cohort-list + .section-label {
+      margin-top: 32px;
+    }
+
+    /* ── Cohort card ── */
+    .cohort-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 0;
+      cursor: pointer;
+      transition: background 0.1s;
+      min-height: 60px;
+    }
+    .cohort-card:hover { background: var(--hover-bg); }
+
+    /* Left cluster */
+    .card-left {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      flex: 0 0 auto;
+      min-width: 160px;
+    }
+
+    .cohort-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-1);
+      letter-spacing: -0.2px;
+      white-space: nowrap;
+    }
+
+    .cohort-members {
+      font-size: 14px;
+      color: var(--text-2);
+      font-weight: 400;
+      white-space: nowrap;
+    }
+
+    /* Center */
+    .card-center {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 0 24px;
+    }
+
+    /* Risk badge */
+    .badge-risk {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      background: #fef2f2;
+      color: var(--red);
+      border-radius: 99px;
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    /* Ended cohort center stats */
+    .stat-label {
+      font-size: 13px;
+      color: var(--text-2);
+      white-space: nowrap;
+    }
+
+    .stat-actual {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .stat-actual-label {
+      font-size: 13px;
+      color: var(--text-2);
+      white-space: nowrap;
+    }
+
+    .input-actual {
+      width: 48px;
+      height: 28px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      text-align: center;
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-1);
+      background: var(--bg);
+      outline: none;
+      transition: border-color 0.1s;
+      /* hide number spinners */
+      -moz-appearance: textfield;
+    }
+    .input-actual::-webkit-inner-spin-button,
+    .input-actual::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    .input-actual:focus { border-color: var(--text-2); }
+    .input-actual::placeholder { color: var(--text-3); }
+
+    .stat-accuracy {
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .stat-accuracy.green  { color: var(--green);  }
+    .stat-accuracy.yellow { color: var(--yellow); }
+    .stat-accuracy.red    { color: var(--red);    }
+    .stat-accuracy.empty  { color: var(--text-3); }
+
+    /* Chevron */
+    .card-chevron {
+      flex: 0 0 auto;
+      color: var(--text-3);
+      font-size: 16px;
+      line-height: 1;
+      margin-left: auto;
+      padding-left: 16px;
+    }
+
+    /* Ended card — slightly lower visual weight */
+    .cohort-card.ended .cohort-name { font-weight: 600; }
+    .cohort-card.ended { border-color: #f0f0f1; }
+  </style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- Page header -->
+  <div class="page-header">
+    <h1 class="page-title">기수 목록</h1>
+    <button class="btn-new">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+      새 기수 만들기
+    </button>
+  </div>
+
+  <!-- Active cohorts -->
+  <p class="section-label">진행 중</p>
+  <div class="cohort-list">
+
+    <!-- AI캠프 3기 -->
+    <div class="cohort-card">
+      <div class="card-left">
+        <span class="cohort-name">AI캠프 3기</span>
+        <span class="cohort-members">28명</span>
+      </div>
+      <div class="card-center">
+        <span class="badge-risk">🔴 3명 위험</span>
+      </div>
+      <span class="card-chevron">›</span>
+    </div>
+
+    <!-- AI캠프 4기 -->
+    <div class="cohort-card">
+      <div class="card-left">
+        <span class="cohort-name">AI캠프 4기</span>
+        <span class="cohort-members">30명</span>
+      </div>
+      <div class="card-center">
+        <span class="badge-risk">🔴 1명 위험</span>
+      </div>
+      <span class="card-chevron">›</span>
+    </div>
+
+  </div>
+
+  <!-- Ended cohorts -->
+  <p class="section-label">종료됨</p>
+  <div class="cohort-list">
+
+    <!-- AI캠프 2기 -->
+    <div class="cohort-card ended">
+      <div class="card-left">
+        <span class="cohort-name">AI캠프 2기</span>
+        <span class="cohort-members">30명</span>
+      </div>
+      <div class="card-center">
+        <span class="stat-label">예측 5명</span>
+        <div class="stat-actual">
+          <span class="stat-actual-label">실제</span>
+          <input class="input-actual" type="number" min="0" value="4" data-pred="5" oninput="updateAccuracy(this)" />
+        </div>
+        <span class="stat-accuracy green" id="acc-2기">적중률 80%</span>
+      </div>
+      <span class="card-chevron">›</span>
+    </div>
+
+    <!-- AI캠프 1기 -->
+    <div class="cohort-card ended">
+      <div class="card-left">
+        <span class="cohort-name">AI캠프 1기</span>
+        <span class="cohort-members">28명</span>
+      </div>
+      <div class="card-center">
+        <span class="stat-label">예측 3명</span>
+        <div class="stat-actual">
+          <span class="stat-actual-label">실제</span>
+          <input class="input-actual" type="number" min="0" value="3" data-pred="3" oninput="updateAccuracy(this)" />
+        </div>
+        <span class="stat-accuracy green" id="acc-1기">적중률 100%</span>
+      </div>
+      <span class="card-chevron">›</span>
+    </div>
+
+    <!-- AI캠프 0기 -->
+    <div class="cohort-card ended">
+      <div class="card-left">
+        <span class="cohort-name">AI캠프 0기</span>
+        <span class="cohort-members">25명</span>
+      </div>
+      <div class="card-center">
+        <span class="stat-label">예측 4명</span>
+        <div class="stat-actual">
+          <span class="stat-actual-label">실제</span>
+          <input class="input-actual" type="number" min="0" placeholder="—" data-pred="4" oninput="updateAccuracy(this)" />
+        </div>
+        <span class="stat-accuracy empty" id="acc-0기">—</span>
+      </div>
+      <span class="card-chevron">›</span>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+  function updateAccuracy(input) {
+    const val = input.value.trim();
+    const pred = parseInt(input.dataset.pred, 10);
+    // Find the accuracy span in the same card-center
+    const center = input.closest('.card-center');
+    const accEl = center.querySelector('.stat-accuracy');
+
+    if (val === '' || isNaN(parseInt(val, 10))) {
+      accEl.textContent = '—';
+      accEl.className = 'stat-accuracy empty';
+      return;
+    }
+
+    const actual = parseInt(val, 10);
+    if (actual === 0 && pred === 0) {
+      accEl.textContent = '적중률 100%';
+      accEl.className = 'stat-accuracy green';
+      return;
+    }
+
+    const pct = actual === 0
+      ? 0
+      : Math.round((1 - Math.abs(pred - actual) / Math.max(pred, actual)) * 100);
+
+    accEl.textContent = `적중률 ${pct}%`;
+    if (pct >= 80) accEl.className = 'stat-accuracy green';
+    else if (pct >= 50) accEl.className = 'stat-accuracy yellow';
+    else accEl.className = 'stat-accuracy red';
+  }
+
+  // Stop card click when interacting with input
+  document.querySelectorAll('.input-actual').forEach(inp => {
+    inp.addEventListener('click', e => e.stopPropagation());
+  });
+</script>
+
+</body>
+</html>

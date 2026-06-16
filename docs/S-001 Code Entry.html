@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>S-001 Code Entry — AI Camp Tutorial</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --sky:        #5ab4d6;
+      --navy:       #1e3a5f;
+      --gold:       #f5c518;
+      --gold-shadow:#c9a010;
+      --white:      #ffffff;
+      --light-blue: #b3d4e8;
+      --error:      #e53935;
+    }
+
+    html, body { width: 100%; height: 100%; }
+
+    body {
+      background-color: var(--sky);
+      background-image: radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px);
+      background-size: 16px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: 'Noto Sans KR', sans-serif;
+    }
+
+    /* ── Pixel RPG background ── */
+    .pixel-bg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .bg-earth {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 30px;
+      background: #6b3d1e;
+    }
+    .bg-earth::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 6px;
+      background: repeating-linear-gradient(
+        90deg, #8b5020 0, #8b5020 8px, #6b3d1e 8px, #6b3d1e 16px
+      );
+    }
+
+    .bg-grass {
+      position: absolute;
+      bottom: 30px; left: 0; right: 0;
+      height: 44px;
+      background: #5dab25;
+    }
+    .bg-grass::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 6px;
+      background: #3d7a1a;
+    }
+    .bg-grass::before {
+      content: '';
+      position: absolute;
+      top: -8px; left: 0; right: 0;
+      height: 8px;
+      background: repeating-linear-gradient(
+        90deg,
+        #5dab25 0, #5dab25 8px,
+        transparent 8px, transparent 16px
+      );
+    }
+
+    .px-tree {
+      position: absolute;
+      bottom: 74px;
+      line-height: 0;
+    }
+    .px-tree svg { image-rendering: pixelated; display: block; }
+
+    .px-cloud {
+      position: absolute;
+      line-height: 0;
+      pointer-events: none;
+    }
+    .px-cloud svg { image-rendering: pixelated; display: block; }
+
+    /* Scanline overlay */
+    .scanlines {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 3;
+      background: repeating-linear-gradient(
+        0deg, transparent, transparent 3px,
+        rgba(0,0,0,0.04) 3px, rgba(0,0,0,0.04) 4px
+      );
+    }
+
+    /* ── Login card ── */
+    .card {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 448px;
+      background-color: var(--navy);
+      border: 2px solid var(--white);
+      border-radius: 6px;
+      padding: 48px 40px 44px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 4px 4px 0 rgba(0,0,0,0.28), 0 0 0 1px rgba(255,255,255,0.07);
+    }
+
+    /* Corner gold accents */
+    .card::before, .card::after {
+      content: '';
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      background: var(--gold);
+    }
+    .card::before { top: -2px; left: -2px; }
+    .card::after  { top: -2px; right: -2px; }
+
+    .card .corner-bl, .card .corner-br {
+      position: absolute;
+      width: 8px; height: 8px;
+      background: var(--gold);
+    }
+    .card .corner-bl { bottom: -2px; left: -2px; }
+    .card .corner-br { bottom: -2px; right: -2px; }
+
+    /* ── Title ── */
+    .service-title {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 18px;
+      color: var(--white);
+      text-align: center;
+      line-height: 1.6;
+      letter-spacing: 0.02em;
+      text-shadow: 2px 2px 0 rgba(0,0,0,0.4);
+      margin-bottom: 16px;
+    }
+
+    .subtitle {
+      font-family: 'Noto Sans KR', sans-serif;
+      font-weight: 300;
+      font-size: 14px;
+      color: var(--light-blue);
+      text-align: center;
+      line-height: 1.7;
+      margin-bottom: 36px;
+    }
+
+    /* ── Form ── */
+    .form { display: flex; flex-direction: column; gap: 12px; }
+
+    .input-label {
+      display: block;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 8px;
+      color: var(--light-blue);
+      margin-bottom: 8px;
+      letter-spacing: 0.05em;
+    }
+
+    .code-input {
+      width: 100%;
+      height: 48px;
+      background-color: rgba(255,255,255,0.06);
+      border: 2px solid var(--white);
+      border-radius: 4px;
+      color: var(--white);
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 16px;
+      padding: 0 16px;
+      outline: none;
+      transition: border-color 0.1s, background-color 0.1s;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    .code-input::placeholder { color: rgba(179,212,232,0.45); font-size: 15px; }
+    .code-input:focus { border-color: var(--gold); background-color: rgba(245,197,24,0.06); }
+    .code-input.error { border-color: var(--error); background-color: rgba(229,57,53,0.07); }
+
+    /* ── CTA Button ── */
+    .btn-enter {
+      margin-top: 8px;
+      width: 100%;
+      height: 52px;
+      background-color: var(--gold);
+      border: 2px solid var(--navy);
+      border-radius: 4px;
+      color: var(--navy);
+      font-family: 'Press Start 2P', monospace;
+      font-size: 13px;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      position: relative;
+      top: 0; left: 0;
+      box-shadow: 3px 3px 0 var(--gold-shadow);
+      transition: top 0.05s, left 0.05s, box-shadow 0.05s;
+      -webkit-appearance: none;
+      appearance: none;
+      outline: none;
+    }
+    .btn-enter:hover { background-color: #f7cc30; }
+    .btn-enter:active { top: 3px; left: 3px; box-shadow: 0 0 0 var(--gold-shadow); }
+
+    /* ── Error ── */
+    .error-area {
+      min-height: 22px;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .error-msg {
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 13px; color: var(--error);
+      text-align: center; opacity: 0; transition: opacity 0.2s;
+    }
+    .error-msg.visible { opacity: 1; }
+    .error-pixel { width: 8px; height: 8px; background-color: var(--error); flex-shrink: 0; display: none; }
+    .error-pixel.visible { display: block; }
+
+    /* ── Footer ── */
+    .hint {
+      margin-top: 28px;
+      text-align: center;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 7px;
+      color: rgba(179,212,232,0.4);
+      letter-spacing: 0.1em;
+      line-height: 2;
+    }
+  
+    /* Moving cloud animation */
+    @keyframes cloud-pass {
+      from { transform: translateX(1600px); }
+      to   { transform: translateX(-350px); }
+    }
+  </style>
+</head>
+<template id="__bundler_thumbnail" data-bg-color="#5ab4d6">
+  <svg viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+    <rect width="800" height="600" fill="#5ab4d6"/>
+    <!-- Clouds -->
+    <rect x="50" y="50" width="70" height="18" fill="#fff" opacity="0.8"/>
+    <rect x="44" y="40" width="36" height="26" fill="#fff" opacity="0.8"/>
+    <rect x="78" y="32" width="36" height="28" fill="#fff" opacity="0.8"/>
+    <!-- Trees -->
+    <rect x="10"  y="400" width="80" height="130" fill="#5dab25"/>
+    <rect x="0"   y="360" width="100" height="48" fill="#4a9820"/>
+    <rect x="710" y="400" width="80" height="130" fill="#5dab25"/>
+    <rect x="700" y="360" width="100" height="48" fill="#4a9820"/>
+    <!-- Ground -->
+    <rect x="0" y="530" width="800" height="44" fill="#5dab25"/>
+    <rect x="0" y="574" width="800" height="26" fill="#6b3d1e"/>
+    <!-- Login card -->
+    <rect x="250" y="140" width="300" height="280" rx="6" fill="#1e3a5f"/>
+    <rect x="250" y="140" width="300" height="280" rx="6" fill="none" stroke="#fff" stroke-width="2"/>
+    <!-- Title bar -->
+    <rect x="290" y="175" width="220" height="10" rx="2" fill="#fff" opacity="0.8"/>
+    <rect x="300" y="195" width="200" height="8"  rx="2" fill="#b3d4e8" opacity="0.6"/>
+    <!-- Input field -->
+    <rect x="275" y="230" width="250" height="36" rx="3" fill="rgba(255,255,255,0.08)" stroke="#fff" stroke-width="1.5"/>
+    <!-- Button -->
+    <rect x="275" y="285" width="250" height="38" rx="3" fill="#f5c518"/>
+    <rect x="320" y="298" width="160" height="10" rx="2" fill="#1e3a5f"/>
+  </svg>
+</template>
+
+<body style="background-color: rgb(122, 195, 222)">
+
+<!-- ── Pixel RPG Background ── -->
+<div class="pixel-bg" aria-hidden="true">
+
+  <!-- Clouds — 7개, 속도/위치 다양 -->
+  <!-- 1: large, very slow 120s -->
+  <div class="px-cloud" style="left:0;top:6%;animation:cloud-pass 180s linear infinite;animation-delay:-152s;">
+    <svg viewBox="0 0 112 48" width="112" height="48"><rect x="16" y="28" width="80" height="20" fill="#fff"/><rect x="8" y="18" width="44" height="28" fill="#fff"/><rect x="60" y="10" width="44" height="36" fill="#fff"/><rect x="28" y="4" width="32" height="24" fill="#fff"/><rect x="8" y="40" width="44" height="6" fill="#cde8f5"/><rect x="16" y="44" width="80" height="4" fill="#cde8f5"/></svg>
+  </div>
+  <!-- 2: medium, 75s -->
+  <div class="px-cloud" style="left:0;top:4%;animation:cloud-pass 110s linear infinite;animation-delay:-76s;">
+    <svg viewBox="0 0 96 40" width="96" height="40"><rect x="12" y="22" width="72" height="18" fill="#fff"/><rect x="4" y="14" width="38" height="22" fill="#fff"/><rect x="54" y="6" width="38" height="30" fill="#fff"/><rect x="22" y="2" width="28" height="20" fill="#fff"/><rect x="4" y="32" width="38" height="6" fill="#cde8f5"/><rect x="12" y="36" width="72" height="4" fill="#cde8f5"/></svg>
+  </div>
+  <!-- 3: small, fast 45s, lower sky -->
+  <div class="px-cloud" style="left:0;top:15%;opacity:0.65;animation:cloud-pass 70s linear infinite;animation-delay:-38s;">
+    <svg viewBox="0 0 64 30" width="64" height="30"><rect x="8" y="16" width="48" height="14" fill="#fff"/><rect x="4" y="10" width="26" height="18" fill="#fff"/><rect x="36" y="4" width="24" height="22" fill="#fff"/><rect x="16" y="3" width="18" height="14" fill="#fff"/><rect x="8" y="24" width="48" height="4" fill="#cde8f5"/></svg>
+  </div>
+  <!-- 4: small, slow 100s, mid sky -->
+  <div class="px-cloud" style="left:0;top:9%;opacity:0.75;animation:cloud-pass 150s linear infinite;animation-delay:-62s;">
+    <svg viewBox="0 0 72 36" width="72" height="36"><rect x="8" y="20" width="56" height="16" fill="#fff"/><rect x="4" y="12" width="30" height="22" fill="#fff"/><rect x="44" y="6" width="28" height="26" fill="#fff"/><rect x="20" y="3" width="22" height="16" fill="#fff"/><rect x="8" y="30" width="56" height="6" fill="#cde8f5"/></svg>
+  </div>
+  <!-- 5: large, 85s, very top -->
+  <div class="px-cloud" style="left:0;top:2%;opacity:0.8;animation:cloud-pass 130s linear infinite;animation-delay:-37s;">
+    <svg viewBox="0 0 112 48" width="112" height="48"><rect x="8" y="26" width="96" height="22" fill="#fff"/><rect x="4" y="16" width="48" height="28" fill="#fff"/><rect x="64" y="8" width="40" height="36" fill="#fff"/><rect x="24" y="4" width="36" height="22" fill="#fff"/><rect x="8" y="42" width="96" height="4" fill="#cde8f5"/><rect x="4" y="38" width="48" height="4" fill="#cde8f5"/></svg>
+  </div>
+  <!-- 6: tiny, fast 50s, lower -->
+  <div class="px-cloud" style="left:0;top:18%;opacity:0.55;animation:cloud-pass 80s linear infinite;animation-delay:-12s;">
+    <svg viewBox="0 0 48 24" width="48" height="24"><rect x="6" y="12" width="36" height="12" fill="#fff"/><rect x="2" y="8" width="20" height="14" fill="#fff"/><rect x="28" y="4" width="16" height="16" fill="#fff"/><rect x="10" y="3" width="16" height="10" fill="#fff"/><rect x="6" y="18" width="36" height="4" fill="#cde8f5"/></svg>
+  </div>
+  <!-- 7: medium, 65s -->
+  <div class="px-cloud" style="left:0;top:11%;opacity:0.7;animation:cloud-pass 100s linear infinite;animation-delay:-3s;">
+    <svg viewBox="0 0 80 36" width="80" height="36"><rect x="8" y="20" width="64" height="16" fill="#fff"/><rect x="4" y="12" width="32" height="22" fill="#fff"/><rect x="48" y="6" width="28" height="26" fill="#fff"/><rect x="20" y="2" width="24" height="18" fill="#fff"/><rect x="8" y="28" width="64" height="6" fill="#cde8f5"/></svg>
+  </div>
+
+  <!-- Trees — left -->
+  <div class="px-tree" style="left:-8px;">
+    <svg viewBox="0 0 80 90" width="130" height="146">
+      <rect x="32" y="0"  width="16" height="8" fill="#a0d455"/>
+      <rect x="24" y="8"  width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="32" y="8"  width="16" height="8" fill="#6ec44a"/>
+      <rect x="48" y="8"  width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="16" y="16" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="24" y="16" width="32" height="8" fill="#5dab25"/>
+      <rect x="56" y="16" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="8"  y="24" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="16" y="24" width="48" height="8" fill="#5dab25"/>
+      <rect x="64" y="24" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="0"  y="32" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="8"  y="32" width="64" height="8" fill="#4a9820"/>
+      <rect x="72" y="32" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="8"  y="40" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="16" y="40" width="48" height="8" fill="#3d7a1a"/>
+      <rect x="64" y="40" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="16" y="48" width="48" height="8" fill="#2d5a12"/>
+      <rect x="32" y="56" width="16" height="34" fill="#a07830"/>
+      <rect x="32" y="56" width="4"  height="34" fill="#7a5520"/>
+      <rect x="44" y="56" width="4"  height="34" fill="#7a5520"/>
+    </svg>
+  </div>
+
+  <div class="px-tree" style="left:112px;">
+    <svg viewBox="0 0 80 90" width="88" height="99">
+      <rect x="32" y="0"  width="16" height="8" fill="#a0d455"/>
+      <rect x="24" y="8"  width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="32" y="8"  width="16" height="8" fill="#6ec44a"/>
+      <rect x="48" y="8"  width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="16" y="16" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="24" y="16" width="32" height="8" fill="#5dab25"/>
+      <rect x="56" y="16" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="8"  y="24" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="16" y="24" width="48" height="8" fill="#5dab25"/>
+      <rect x="64" y="24" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="0"  y="32" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="8"  y="32" width="64" height="8" fill="#4a9820"/>
+      <rect x="72" y="32" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="8"  y="40" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="16" y="40" width="48" height="8" fill="#3d7a1a"/>
+      <rect x="64" y="40" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="16" y="48" width="48" height="8" fill="#2d5a12"/>
+      <rect x="32" y="56" width="16" height="34" fill="#a07830"/>
+      <rect x="32" y="56" width="4"  height="34" fill="#7a5520"/>
+      <rect x="44" y="56" width="4"  height="34" fill="#7a5520"/>
+    </svg>
+  </div>
+
+  <div class="px-tree" style="left:228px;opacity:0.55;">
+    <svg viewBox="0 0 80 90" width="64" height="72">
+      <rect x="32" y="0"  width="16" height="8" fill="#a0d455"/>
+      <rect x="24" y="8"  width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="32" y="8"  width="16" height="8" fill="#6ec44a"/>
+      <rect x="48" y="8"  width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="16" y="16" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="24" y="16" width="32" height="8" fill="#5dab25"/>
+      <rect x="56" y="16" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="8"  y="24" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="16" y="24" width="48" height="8" fill="#5dab25"/>
+      <rect x="64" y="24" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="0"  y="32" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="8"  y="32" width="64" height="8" fill="#4a9820"/>
+      <rect x="72" y="32" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="8"  y="40" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="16" y="40" width="48" height="8" fill="#3d7a1a"/>
+      <rect x="64" y="40" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="16" y="48" width="48" height="8" fill="#2d5a12"/>
+      <rect x="32" y="56" width="16" height="34" fill="#a07830"/>
+      <rect x="32" y="56" width="4"  height="34" fill="#7a5520"/>
+      <rect x="44" y="56" width="4"  height="34" fill="#7a5520"/>
+    </svg>
+  </div>
+
+  <!-- Trees — right (mirrored) -->
+  <div class="px-tree" style="right:-8px; transform:scaleX(-1);">
+    <svg viewBox="0 0 80 90" width="130" height="146">
+      <rect x="32" y="0"  width="16" height="8" fill="#a0d455"/>
+      <rect x="24" y="8"  width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="32" y="8"  width="16" height="8" fill="#6ec44a"/>
+      <rect x="48" y="8"  width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="16" y="16" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="24" y="16" width="32" height="8" fill="#5dab25"/>
+      <rect x="56" y="16" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="8"  y="24" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="16" y="24" width="48" height="8" fill="#5dab25"/>
+      <rect x="64" y="24" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="0"  y="32" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="8"  y="32" width="64" height="8" fill="#4a9820"/>
+      <rect x="72" y="32" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="8"  y="40" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="16" y="40" width="48" height="8" fill="#3d7a1a"/>
+      <rect x="64" y="40" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="16" y="48" width="48" height="8" fill="#2d5a12"/>
+      <rect x="32" y="56" width="16" height="34" fill="#a07830"/>
+      <rect x="32" y="56" width="4"  height="34" fill="#7a5520"/>
+      <rect x="44" y="56" width="4"  height="34" fill="#7a5520"/>
+    </svg>
+  </div>
+
+  <div class="px-tree" style="right:112px; transform:scaleX(-1);">
+    <svg viewBox="0 0 80 90" width="88" height="99">
+      <rect x="32" y="0"  width="16" height="8" fill="#a0d455"/>
+      <rect x="24" y="8"  width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="32" y="8"  width="16" height="8" fill="#6ec44a"/>
+      <rect x="48" y="8"  width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="16" y="16" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="24" y="16" width="32" height="8" fill="#5dab25"/>
+      <rect x="56" y="16" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="8"  y="24" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="16" y="24" width="48" height="8" fill="#5dab25"/>
+      <rect x="64" y="24" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="0"  y="32" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="8"  y="32" width="64" height="8" fill="#4a9820"/>
+      <rect x="72" y="32" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="8"  y="40" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="16" y="40" width="48" height="8" fill="#3d7a1a"/>
+      <rect x="64" y="40" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="16" y="48" width="48" height="8" fill="#2d5a12"/>
+      <rect x="32" y="56" width="16" height="34" fill="#a07830"/>
+      <rect x="32" y="56" width="4"  height="34" fill="#7a5520"/>
+      <rect x="44" y="56" width="4"  height="34" fill="#7a5520"/>
+    </svg>
+  </div>
+
+  <div class="px-tree" style="right:228px; transform:scaleX(-1); opacity:0.55;">
+    <svg viewBox="0 0 80 90" width="64" height="72">
+      <rect x="32" y="0"  width="16" height="8" fill="#a0d455"/>
+      <rect x="24" y="8"  width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="32" y="8"  width="16" height="8" fill="#6ec44a"/>
+      <rect x="48" y="8"  width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="16" y="16" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="24" y="16" width="32" height="8" fill="#5dab25"/>
+      <rect x="56" y="16" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="8"  y="24" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="16" y="24" width="48" height="8" fill="#5dab25"/>
+      <rect x="64" y="24" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="0"  y="32" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="8"  y="32" width="64" height="8" fill="#4a9820"/>
+      <rect x="72" y="32" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="8"  y="40" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="16" y="40" width="48" height="8" fill="#3d7a1a"/>
+      <rect x="64" y="40" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="16" y="48" width="48" height="8" fill="#2d5a12"/>
+      <rect x="32" y="56" width="16" height="34" fill="#a07830"/>
+      <rect x="32" y="56" width="4"  height="34" fill="#7a5520"/>
+      <rect x="44" y="56" width="4"  height="34" fill="#7a5520"/>
+    </svg>
+  </div>
+
+  <!-- Ground -->
+  <div class="bg-earth"></div>
+  <div class="bg-grass"></div>
+</div>
+
+<!-- Scanlines -->
+<div class="scanlines" aria-hidden="true"></div>
+
+<!-- ── Login card ── -->
+<div class="card" role="main">
+  <div class="corner-bl"></div>
+  <div class="corner-br"></div>
+
+  <h1 class="service-title">AI CAMP TUTORIAL</h1>
+  <p class="subtitle">이름과 전화번호 뒷 4자리를 입력해주세요</p>
+
+  <div class="form">
+    <div class="input-wrapper">
+      <label class="input-label" for="code-input">ACCESS CODE</label>
+      <input
+        class="code-input error"
+        id="code-input"
+        type="text"
+        placeholder="홍길동1234"
+        autocomplete="off"
+        spellcheck="false"
+        maxlength="20"
+      />
+    </div>
+
+    <div class="error-area">
+      <div class="error-pixel visible"></div>
+      <p class="error-msg visible">코드를 다시 확인해주세요</p>
+    </div>
+
+    <button class="btn-enter" type="button">입장하기</button>
+  </div>
+
+  <p class="hint">
+    S-001 &nbsp;·&nbsp; AI CAMP TUTORIAL<br/>
+    © 2026 AI CAMP
+  </p>
+</div>
+
+<script>
+  const input    = document.getElementById('code-input');
+  const errorMsg = document.querySelector('.error-msg');
+  const errorPx  = document.querySelector('.error-pixel');
+  const btn      = document.querySelector('.btn-enter');
+
+  const clearError = () => { input.classList.remove('error'); errorMsg.classList.remove('visible'); errorPx.classList.remove('visible'); };
+  const showError  = () => { input.classList.add('error');    errorMsg.classList.add('visible');    errorPx.classList.add('visible');    };
+
+  input.addEventListener('input', () => { if (input.value.length > 0) clearError(); });
+  btn.addEventListener('click', () => {
+    if (input.value.trim().length < 3) { showError(); input.focus(); }
+    else { clearError(); btn.textContent = '접속 중...'; setTimeout(() => { btn.textContent = '입장하기'; }, 1200); }
+  });
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') btn.click(); });
+</script>
+</body>
+</html>

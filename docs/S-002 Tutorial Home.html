@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>S-002 Tutorial Home — AI Camp Tutorial</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --sky:   #5ab4d6;
+      --navy:  #1e3a5f;
+      --navy-dark: #0d2240;
+      --gold:  #f5c518;
+      --white: #ffffff;
+      --lb:    #b3d4e8;
+      --green: #4caf50;
+    }
+
+    html, body { width: 100%; min-height: 100%; scrollbar-width: none; height: 100vh; overflow: hidden; }
+    html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; }
+
+    body {
+      background-color: var(--sky);
+      background-image: radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px);
+      background-size: 16px 16px;
+      font-family: 'Noto Sans KR', sans-serif;
+    }
+
+    /* ── Pixel RPG background layer (fixed) ── */
+    .pixel-bg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    /* Earth strip */
+    .bg-earth {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 30px;
+      background: #6b3d1e;
+    }
+    /* Dark earth pixel detail */
+    .bg-earth::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 6px;
+      background: repeating-linear-gradient(
+        90deg, #8b5020 0, #8b5020 8px, #6b3d1e 8px, #6b3d1e 16px
+      );
+    }
+
+    /* Grass strip */
+    .bg-grass {
+      position: absolute;
+      bottom: 30px; left: 0; right: 0;
+      height: 44px;
+      background: #5dab25;
+    }
+    /* Grass dark edge */
+    .bg-grass::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 6px;
+      background: #3d7a1a;
+    }
+    /* Pixel grass tufts at very top */
+    .bg-grass::before {
+      content: '';
+      position: absolute;
+      top: -8px; left: 0; right: 0;
+      height: 8px;
+      background: repeating-linear-gradient(
+        90deg,
+        #5dab25 0, #5dab25 8px,
+        transparent 8px, transparent 16px
+      );
+    }
+
+    /* Pixel tree wrapper */
+    .px-tree {
+      position: absolute;
+      bottom: 74px; /* sits on top of grass */
+      line-height: 0;
+    }
+    .px-tree svg { image-rendering: pixelated; display: block; }
+
+    /* Pixel cloud wrapper */
+    .px-cloud {
+      position: absolute;
+      line-height: 0;
+    }
+    .px-cloud svg { image-rendering: pixelated; display: block; }
+
+    /* Scanlines */
+    .scanlines {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 3;
+      background: repeating-linear-gradient(
+        0deg, transparent, transparent 3px,
+        rgba(0,0,0,0.04) 3px, rgba(0,0,0,0.04) 4px
+      );
+    }
+
+    /* ── Page content ── */
+    .page-wrapper {
+      position: relative;
+      z-index: 1;
+      max-width: 448px;
+      margin: 0 auto;
+      padding: 28px 0 40px;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .header-title {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 13px;
+      color: var(--white);
+      line-height: 1.6;
+      text-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+    }
+    .header-name {
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 14px;
+      color: var(--white);
+      font-weight: 400;
+      white-space: nowrap;
+      text-shadow: 1px 1px 0 rgba(0,0,0,0.25);
+    }
+
+    /* Progress section */
+    .progress-section { margin-bottom: 20px; }
+
+    .progress-bar { display: flex; align-items: center; gap: 12px; }
+    .prog-squares { display: flex; gap: 5px; flex: 1; }
+    .sq {
+      display: block; width: 18px; height: 18px;
+      background: var(--navy);
+      border: 2px solid rgba(255,255,255,0.25);
+      flex-shrink: 0;
+    }
+    .sq.filled { background: var(--gold); border-color: var(--gold); }
+    .prog-label {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 11px;
+      color: var(--white);
+      white-space: nowrap;
+      text-shadow: 1px 1px 0 rgba(0,0,0,0.3);
+    }
+    .prog-sub {
+      margin-top: 6px;
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 11px;
+      font-weight: 300;
+      color: var(--lb);
+    }
+
+    /* Notice card — same size as mission cards */
+    .notice-card {
+      background: var(--navy);
+      border: 2px solid #e53935;
+      border-radius: 6px;
+      box-shadow: 3px 3px 0 rgba(0,0,0,0.22);
+      cursor: pointer;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: filter 0.08s, transform 0.06s;
+    }
+    .notice-card:hover { filter: brightness(1.1); }
+    .notice-card:active { transform: translate(1px,1px); box-shadow: 1px 1px 0 rgba(0,0,0,0.22); }
+
+    /* ── Mission grid ── */
+    .mission-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    /* ── Mission card ── */
+    .mission-card {
+      background: var(--navy);
+      border: 2px solid var(--white);
+      border-radius: 6px;
+      box-shadow: 3px 3px 0 rgba(0,0,0,0.22);
+      cursor: pointer;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: filter 0.08s, transform 0.06s;
+    }
+    .mission-card.done {
+      border-color: var(--green);
+      opacity: 0.9;
+    }
+    .mission-card:hover { filter: brightness(1.1); }
+    .mission-card:active {
+      transform: translate(1px, 1px);
+      box-shadow: 1px 1px 0 rgba(0,0,0,0.22);
+    }
+
+    /* Card image area */
+    .card-img {
+      height: 120px;
+      background: var(--navy-dark);
+      background-image: radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px);
+      background-size: 8px 8px;
+      border-bottom: 2px solid rgba(255,255,255,0.12);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .mission-card.done .card-img { border-bottom-color: rgba(76,175,80,0.25); }
+
+    /* Scanline on image */
+    .card-img::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg, transparent, transparent 3px, rgba(0,0,0,0.07) 3px, rgba(0,0,0,0.07) 4px
+      );
+      pointer-events: none;
+    }
+
+    .card-icon { width: 52px; height: 52px; position: relative; z-index: 1; }
+    .card-icon svg { image-rendering: pixelated; width: 100%; height: 100%; }
+
+    /* Mission number badge */
+    .mission-badge {
+      position: absolute;
+      top: 8px; left: 8px;
+      background: rgba(13,34,64,0.88);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 3px;
+      padding: 3px 6px;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 6px;
+      color: var(--gold);
+      letter-spacing: 0.05em;
+      z-index: 2;
+    }
+
+    /* Status icons */
+    .card-status {
+      position: absolute;
+      top: 8px; right: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      z-index: 2;
+    }
+    .card-status svg { image-rendering: pixelated; }
+
+    /* CLEAR completion bar */
+    .clear-bar {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: rgba(6, 16, 36, 0.97);
+      border: 2px solid var(--green);
+      border-left: none; border-right: none; border-bottom: none;
+      padding: 6px 0;
+      text-align: center;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 8px;
+      color: var(--green);
+      letter-spacing: 0.2em;
+      text-shadow: 0 0 8px rgba(76,175,80,0.9), 2px 2px 0 rgba(0,0,0,0.5);
+      box-shadow: inset 0 1px 0 rgba(76,175,80,0.15);
+      z-index: 2;
+      overflow: visible;
+    }
+
+    /* Sparkle stars */
+    .sparkle {
+      position: absolute;
+      color: #fff;
+      font-style: normal;
+      pointer-events: none;
+      line-height: 1;
+      animation: sp-twinkle 1.8s ease-in-out infinite;
+    }
+    .sp1 { font-size: 9px;  left: 10px;  top: -10px; animation-delay: 0s;    color: var(--green); }
+    .sp2 { font-size: 7px;  right: 12px; top: -9px;  animation-delay: 0.6s;  color: #a8e6b0; }
+    .sp3 { font-size: 11px; left: 44%;   top: -13px; animation-delay: 1.1s;  color: #ffffff; }
+    .sp4 { font-size: 6px;  left: 22%;   top: -8px;  animation-delay: 0.3s;  color: var(--green); }
+    .sp5 { font-size: 7px;  right: 26%;  top: -9px;  animation-delay: 0.9s;  color: #a8e6b0; }
+
+    @keyframes sp-twinkle {
+      0%, 100% { opacity: 0.15; transform: scale(0.6) rotate(0deg); }
+      50%       { opacity: 1;    transform: scale(1.2) rotate(20deg); }
+    }
+
+    /* Card info */
+    .card-info {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      flex: 1;
+    }
+    .mission-title {
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--white);
+      line-height: 1.35;
+    }
+    .mission-desc {
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 11px;
+      font-weight: 300;
+      color: var(--lb);
+      line-height: 1.4;
+    }
+  
+    /* Moving cloud animation */
+    @keyframes cloud-pass {
+      from { transform: translateX(1600px); }
+      to   { transform: translateX(-350px); }
+    }
+  </style>
+</head>
+<template id="__bundler_thumbnail" data-bg-color="#5ab4d6">
+  <svg viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+    <!-- Sky -->
+    <rect width="800" height="600" fill="#5ab4d6"/>
+    <!-- Clouds -->
+    <rect x="60" y="50" width="80" height="20" fill="#fff" opacity="0.8"/>
+    <rect x="50" y="40" width="40" height="30" fill="#fff" opacity="0.8"/>
+    <rect x="90" y="34" width="40" height="30" fill="#fff" opacity="0.8"/>
+    <rect x="300" y="40" width="60" height="16" fill="#fff" opacity="0.7"/>
+    <rect x="290" y="32" width="28" height="22" fill="#fff" opacity="0.7"/>
+    <!-- Trees left -->
+    <rect x="20" y="380" width="60" height="140" fill="#5dab25"/>
+    <rect x="0"  y="340" width="100" height="50" fill="#4a9820"/>
+    <!-- Trees right -->
+    <rect x="720" y="380" width="60" height="140" fill="#5dab25"/>
+    <rect x="700" y="340" width="100" height="50" fill="#4a9820"/>
+    <!-- Grass -->
+    <rect x="0" y="520" width="800" height="50" fill="#5dab25"/>
+    <rect x="0" y="570" width="800" height="30" fill="#6b3d1e"/>
+    <!-- Content card area -->
+    <rect x="200" y="60" width="400" height="440" rx="6" fill="#1e3a5f" opacity="0.15"/>
+    <!-- Mission cards -->
+    <rect x="210" y="130" width="185" height="120" rx="4" fill="#1e3a5f"/>
+    <rect x="210" y="130" width="185" height="120" rx="4" fill="none" stroke="#4caf50" stroke-width="2"/>
+    <rect x="405" y="130" width="185" height="120" rx="4" fill="#1e3a5f"/>
+    <rect x="405" y="130" width="185" height="120" rx="4" fill="none" stroke="#4caf50" stroke-width="2"/>
+    <rect x="210" y="260" width="185" height="120" rx="4" fill="#1e3a5f"/>
+    <rect x="210" y="260" width="185" height="120" rx="4" fill="none" stroke="#4caf50" stroke-width="2"/>
+    <rect x="405" y="260" width="185" height="120" rx="4" fill="#1e3a5f"/>
+    <rect x="405" y="260" width="185" height="120" rx="4" fill="none" stroke="#fff" stroke-width="2"/>
+    <!-- Progress bar -->
+    <rect x="210" y="100" width="380" height="14" rx="2" fill="#1e3a5f"/>
+    <rect x="210" y="100" width="163" height="14" rx="2" fill="#f5c518"/>
+    <!-- Title -->
+    <rect x="210" y="70" width="200" height="12" rx="2" fill="#fff" opacity="0.8"/>
+  </svg>
+</template>
+
+<body style="background-color: rgb(113, 191, 221)">
+
+<!-- ── Pixel RPG Background ── -->
+<div class="pixel-bg" aria-hidden="true">
+
+  <!-- Clouds — 7개, 속도/위치 다양 -->
+  <!-- 1: large, very slow 120s -->
+  <div class="px-cloud" style="left:0;top:6%;animation:cloud-pass 180s linear infinite;animation-delay:-152s;">
+    <svg viewBox="0 0 112 48" width="112" height="48"><rect x="16" y="28" width="80" height="20" fill="#fff"/><rect x="8" y="18" width="44" height="28" fill="#fff"/><rect x="60" y="10" width="44" height="36" fill="#fff"/><rect x="28" y="4" width="32" height="24" fill="#fff"/><rect x="8" y="40" width="44" height="6" fill="#cde8f5"/><rect x="16" y="44" width="80" height="4" fill="#cde8f5"/></svg>
+  </div>
+  <!-- 2: medium, 75s -->
+  <div class="px-cloud" style="left:0;top:4%;animation:cloud-pass 110s linear infinite;animation-delay:-76s;">
+    <svg viewBox="0 0 96 40" width="96" height="40"><rect x="12" y="22" width="72" height="18" fill="#fff"/><rect x="4" y="14" width="38" height="22" fill="#fff"/><rect x="54" y="6" width="38" height="30" fill="#fff"/><rect x="22" y="2" width="28" height="20" fill="#fff"/><rect x="4" y="32" width="38" height="6" fill="#cde8f5"/><rect x="12" y="36" width="72" height="4" fill="#cde8f5"/></svg>
+  </div>
+  <!-- 3: small, fast 45s, lower sky -->
+  <div class="px-cloud" style="left:0;top:15%;opacity:0.65;animation:cloud-pass 70s linear infinite;animation-delay:-38s;">
+    <svg viewBox="0 0 64 30" width="64" height="30"><rect x="8" y="16" width="48" height="14" fill="#fff"/><rect x="4" y="10" width="26" height="18" fill="#fff"/><rect x="36" y="4" width="24" height="22" fill="#fff"/><rect x="16" y="3" width="18" height="14" fill="#fff"/><rect x="8" y="24" width="48" height="4" fill="#cde8f5"/></svg>
+  </div>
+  <!-- 4: small, slow 100s, mid sky -->
+  <div class="px-cloud" style="left:0;top:9%;opacity:0.75;animation:cloud-pass 150s linear infinite;animation-delay:-62s;">
+    <svg viewBox="0 0 72 36" width="72" height="36"><rect x="8" y="20" width="56" height="16" fill="#fff"/><rect x="4" y="12" width="30" height="22" fill="#fff"/><rect x="44" y="6" width="28" height="26" fill="#fff"/><rect x="20" y="3" width="22" height="16" fill="#fff"/><rect x="8" y="30" width="56" height="6" fill="#cde8f5"/></svg>
+  </div>
+  <!-- 5: large, 85s, very top -->
+  <div class="px-cloud" style="left:0;top:2%;opacity:0.8;animation:cloud-pass 130s linear infinite;animation-delay:-37s;">
+    <svg viewBox="0 0 112 48" width="112" height="48"><rect x="8" y="26" width="96" height="22" fill="#fff"/><rect x="4" y="16" width="48" height="28" fill="#fff"/><rect x="64" y="8" width="40" height="36" fill="#fff"/><rect x="24" y="4" width="36" height="22" fill="#fff"/><rect x="8" y="42" width="96" height="4" fill="#cde8f5"/><rect x="4" y="38" width="48" height="4" fill="#cde8f5"/></svg>
+  </div>
+  <!-- 6: tiny, fast 50s, lower -->
+  <div class="px-cloud" style="left:0;top:18%;opacity:0.55;animation:cloud-pass 80s linear infinite;animation-delay:-12s;">
+    <svg viewBox="0 0 48 24" width="48" height="24"><rect x="6" y="12" width="36" height="12" fill="#fff"/><rect x="2" y="8" width="20" height="14" fill="#fff"/><rect x="28" y="4" width="16" height="16" fill="#fff"/><rect x="10" y="3" width="16" height="10" fill="#fff"/><rect x="6" y="18" width="36" height="4" fill="#cde8f5"/></svg>
+  </div>
+  <!-- 7: medium, 65s -->
+  <div class="px-cloud" style="left:0;top:11%;opacity:0.7;animation:cloud-pass 100s linear infinite;animation-delay:-3s;">
+    <svg viewBox="0 0 80 36" width="80" height="36"><rect x="8" y="20" width="64" height="16" fill="#fff"/><rect x="4" y="12" width="32" height="22" fill="#fff"/><rect x="48" y="6" width="28" height="26" fill="#fff"/><rect x="20" y="2" width="24" height="18" fill="#fff"/><rect x="8" y="28" width="64" height="6" fill="#cde8f5"/></svg>
+  </div>
+
+  <!-- Trees — left side -->
+  <div class="px-tree" style="left:-8px;">
+    <svg viewBox="0 0 80 90" width="130" height="146">
+      <rect x="32" y="0"  width="16" height="8" fill="#a0d455"/>
+      <rect x="24" y="8"  width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="32" y="8"  width="16" height="8" fill="#6ec44a"/>
+      <rect x="48" y="8"  width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="16" y="16" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="24" y="16" width="32" height="8" fill="#5dab25"/>
+      <rect x="56" y="16" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="8"  y="24" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="16" y="24" width="48" height="8" fill="#5dab25"/>
+      <rect x="64" y="24" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="0"  y="32" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="8"  y="32" width="64" height="8" fill="#4a9820"/>
+      <rect x="72" y="32" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="8"  y="40" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="16" y="40" width="48" height="8" fill="#3d7a1a"/>
+      <rect x="64" y="40" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="16" y="48" width="48" height="8" fill="#2d5a12"/>
+      <rect x="32" y="56" width="16" height="34" fill="#a07830"/>
+      <rect x="32" y="56" width="4"  height="34" fill="#7a5520"/>
+      <rect x="44" y="56" width="4"  height="34" fill="#7a5520"/>
+    </svg>
+  </div>
+
+  <div class="px-tree" style="left:108px;">
+    <svg viewBox="0 0 80 90" width="90" height="101">
+      <rect x="32" y="0"  width="16" height="8" fill="#a0d455"/>
+      <rect x="24" y="8"  width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="32" y="8"  width="16" height="8" fill="#6ec44a"/>
+      <rect x="48" y="8"  width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="16" y="16" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="24" y="16" width="32" height="8" fill="#5dab25"/>
+      <rect x="56" y="16" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="8"  y="24" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="16" y="24" width="48" height="8" fill="#5dab25"/>
+      <rect x="64" y="24" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="0"  y="32" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="8"  y="32" width="64" height="8" fill="#4a9820"/>
+      <rect x="72" y="32" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="8"  y="40" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="16" y="40" width="48" height="8" fill="#3d7a1a"/>
+      <rect x="64" y="40" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="16" y="48" width="48" height="8" fill="#2d5a12"/>
+      <rect x="32" y="56" width="16" height="34" fill="#a07830"/>
+      <rect x="32" y="56" width="4"  height="34" fill="#7a5520"/>
+      <rect x="44" y="56" width="4"  height="34" fill="#7a5520"/>
+    </svg>
+  </div>
+
+  <div class="px-tree" style="left:228px;opacity:0.65;">
+    <svg viewBox="0 0 80 90" width="68" height="76">
+      <rect x="32" y="0"  width="16" height="8" fill="#a0d455"/>
+      <rect x="24" y="8"  width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="32" y="8"  width="16" height="8" fill="#6ec44a"/>
+      <rect x="48" y="8"  width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="16" y="16" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="24" y="16" width="32" height="8" fill="#5dab25"/>
+      <rect x="56" y="16" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="8"  y="24" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="16" y="24" width="48" height="8" fill="#5dab25"/>
+      <rect x="64" y="24" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="0"  y="32" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="8"  y="32" width="64" height="8" fill="#4a9820"/>
+      <rect x="72" y="32" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="8"  y="40" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="16" y="40" width="48" height="8" fill="#3d7a1a"/>
+      <rect x="64" y="40" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="16" y="48" width="48" height="8" fill="#2d5a12"/>
+      <rect x="32" y="56" width="16" height="34" fill="#a07830"/>
+      <rect x="32" y="56" width="4"  height="34" fill="#7a5520"/>
+      <rect x="44" y="56" width="4"  height="34" fill="#7a5520"/>
+    </svg>
+  </div>
+
+  <!-- Trees — right side (mirrored) -->
+  <div class="px-tree" style="right:-8px; transform:scaleX(-1);">
+    <svg viewBox="0 0 80 90" width="130" height="146">
+      <rect x="32" y="0"  width="16" height="8" fill="#a0d455"/>
+      <rect x="24" y="8"  width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="32" y="8"  width="16" height="8" fill="#6ec44a"/>
+      <rect x="48" y="8"  width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="16" y="16" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="24" y="16" width="32" height="8" fill="#5dab25"/>
+      <rect x="56" y="16" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="8"  y="24" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="16" y="24" width="48" height="8" fill="#5dab25"/>
+      <rect x="64" y="24" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="0"  y="32" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="8"  y="32" width="64" height="8" fill="#4a9820"/>
+      <rect x="72" y="32" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="8"  y="40" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="16" y="40" width="48" height="8" fill="#3d7a1a"/>
+      <rect x="64" y="40" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="16" y="48" width="48" height="8" fill="#2d5a12"/>
+      <rect x="32" y="56" width="16" height="34" fill="#a07830"/>
+      <rect x="32" y="56" width="4"  height="34" fill="#7a5520"/>
+      <rect x="44" y="56" width="4"  height="34" fill="#7a5520"/>
+    </svg>
+  </div>
+
+  <div class="px-tree" style="right:108px; transform:scaleX(-1);">
+    <svg viewBox="0 0 80 90" width="90" height="101">
+      <rect x="32" y="0"  width="16" height="8" fill="#a0d455"/>
+      <rect x="24" y="8"  width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="32" y="8"  width="16" height="8" fill="#6ec44a"/>
+      <rect x="48" y="8"  width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="16" y="16" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="24" y="16" width="32" height="8" fill="#5dab25"/>
+      <rect x="56" y="16" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="8"  y="24" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="16" y="24" width="48" height="8" fill="#5dab25"/>
+      <rect x="64" y="24" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="0"  y="32" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="8"  y="32" width="64" height="8" fill="#4a9820"/>
+      <rect x="72" y="32" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="8"  y="40" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="16" y="40" width="48" height="8" fill="#3d7a1a"/>
+      <rect x="64" y="40" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="16" y="48" width="48" height="8" fill="#2d5a12"/>
+      <rect x="32" y="56" width="16" height="34" fill="#a07830"/>
+      <rect x="32" y="56" width="4"  height="34" fill="#7a5520"/>
+      <rect x="44" y="56" width="4"  height="34" fill="#7a5520"/>
+    </svg>
+  </div>
+
+  <div class="px-tree" style="right:228px; transform:scaleX(-1); opacity:0.65;">
+    <svg viewBox="0 0 80 90" width="68" height="76">
+      <rect x="32" y="0"  width="16" height="8" fill="#a0d455"/>
+      <rect x="24" y="8"  width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="32" y="8"  width="16" height="8" fill="#6ec44a"/>
+      <rect x="48" y="8"  width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="16" y="16" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="24" y="16" width="32" height="8" fill="#5dab25"/>
+      <rect x="56" y="16" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="8"  y="24" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="16" y="24" width="48" height="8" fill="#5dab25"/>
+      <rect x="64" y="24" width="8"  height="8" fill="#3d7a1a"/>
+      <rect x="0"  y="32" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="8"  y="32" width="64" height="8" fill="#4a9820"/>
+      <rect x="72" y="32" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="8"  y="40" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="16" y="40" width="48" height="8" fill="#3d7a1a"/>
+      <rect x="64" y="40" width="8"  height="8" fill="#2d5a12"/>
+      <rect x="16" y="48" width="48" height="8" fill="#2d5a12"/>
+      <rect x="32" y="56" width="16" height="34" fill="#a07830"/>
+      <rect x="32" y="56" width="4"  height="34" fill="#7a5520"/>
+      <rect x="44" y="56" width="4"  height="34" fill="#7a5520"/>
+    </svg>
+  </div>
+
+  <!-- Ground -->
+  <div class="bg-earth"></div>
+  <div class="bg-grass"></div>
+</div>
+
+<!-- Scanlines -->
+<div class="scanlines" aria-hidden="true"></div>
+
+<!-- ── Page content ── -->
+<div class="page-wrapper">
+
+  <!-- Header -->
+  <header class="header">
+    <span class="header-title">AI CAMP<br/>TUTORIAL</span>
+    <span class="header-name">박민준 님</span>
+  </header>
+
+  <!-- Progress bar -->
+  <div class="progress-section">
+    <div class="progress-bar">
+      <div class="prog-squares">
+        <span class="sq filled"></span>
+        <span class="sq filled"></span>
+        <span class="sq filled"></span>
+        <span class="sq"></span>
+        <span class="sq"></span>
+        <span class="sq"></span>
+        <span class="sq"></span>
+      </div>
+      <span class="prog-label">3 / 7 <span style="font-family:'Noto Sans KR',sans-serif;font-weight:300;font-size:11px;letter-spacing:0;">완료</span></span>
+    </div>
+  </div>
+
+  <!-- Mission grid -->
+  <div class="mission-grid">
+
+    <!-- MISSION 01 — done -->
+    <div class="mission-card done">
+      <div class="card-img">
+        <span class="mission-badge">M.01</span>
+        <div class="card-status">
+          <svg viewBox="0 0 16 16" width="18" height="18"><rect x="0" y="0" width="16" height="16" fill="#4caf50"/><rect x="2" y="9" width="2" height="2" fill="white"/><rect x="4" y="11" width="2" height="2" fill="white"/><rect x="6" y="9" width="2" height="2" fill="white"/><rect x="8" y="7" width="2" height="2" fill="white"/><rect x="10" y="5" width="2" height="2" fill="white"/><rect x="12" y="3" width="2" height="4" fill="white"/></svg>
+        </div>
+        <div class="card-icon">
+          <svg viewBox="0 0 32 32"><rect x="12" y="2" width="8" height="5" fill="#f5c518"/><rect x="12" y="25" width="8" height="5" fill="#f5c518"/><rect x="2" y="12" width="5" height="8" fill="#f5c518"/><rect x="25" y="12" width="5" height="8" fill="#f5c518"/><rect x="7" y="7" width="18" height="18" fill="#f5c518"/><rect x="11" y="11" width="10" height="10" fill="#1e3a5f"/><rect x="13" y="13" width="6" height="6" fill="#f5c518"/></svg>
+        </div>
+        <div class="clear-bar"><em class="sparkle sp1">✦</em><em class="sparkle sp2">✦</em><em class="sparkle sp3">✦</em><em class="sparkle sp4">✦</em><em class="sparkle sp5">✦</em>CLEAR!</div>
+      </div>
+      <div class="card-info">
+        <span class="mission-title">환경 설정하기</span>
+        <span class="mission-desc">AI 도구 설치 및 계정 만들기</span>
+      </div>
+    </div>
+
+    <!-- MISSION 02 — done -->
+    <div class="mission-card done">
+      <div class="card-img">
+        <span class="mission-badge">M.02</span>
+        <div class="card-status">
+          <svg viewBox="0 0 16 16" width="18" height="18"><rect x="0" y="0" width="16" height="16" fill="#4caf50"/><rect x="2" y="9" width="2" height="2" fill="white"/><rect x="4" y="11" width="2" height="2" fill="white"/><rect x="6" y="9" width="2" height="2" fill="white"/><rect x="8" y="7" width="2" height="2" fill="white"/><rect x="10" y="5" width="2" height="2" fill="white"/><rect x="12" y="3" width="2" height="4" fill="white"/></svg>
+        </div>
+        <div class="card-icon">
+          <svg viewBox="0 0 32 32"><rect x="2" y="4" width="28" height="20" fill="#ffffff"/><rect x="4" y="6" width="24" height="16" fill="#1e3a5f"/><rect x="6" y="9" width="20" height="2" fill="#ffffff"/><rect x="6" y="13" width="14" height="2" fill="#ffffff"/><rect x="6" y="17" width="18" height="2" fill="#ffffff"/><rect x="6" y="24" width="6" height="4" fill="#ffffff"/></svg>
+        </div>
+        <div class="clear-bar"><em class="sparkle sp1">✦</em><em class="sparkle sp2">✦</em><em class="sparkle sp3">✦</em><em class="sparkle sp4">✦</em><em class="sparkle sp5">✦</em>CLEAR!</div>
+      </div>
+      <div class="card-info">
+        <span class="mission-title">프롬프트 기초</span>
+        <span class="mission-desc">ChatGPT와 첫 대화 나누기</span>
+      </div>
+    </div>
+
+    <!-- MISSION 03 — done + photo -->
+    <div class="mission-card done">
+      <div class="card-img">
+        <span class="mission-badge">M.03</span>
+        <div class="card-status">
+          <svg viewBox="0 0 14 12" width="14" height="12"><rect x="0" y="2" width="14" height="10" fill="#b3d4e8"/><rect x="4" y="0" width="6" height="4" fill="#b3d4e8"/><rect x="4" y="4" width="6" height="6" fill="#1e3a5f"/><rect x="5" y="5" width="4" height="4" fill="#5ab4d6"/></svg>
+          <svg viewBox="0 0 16 16" width="18" height="18"><rect x="0" y="0" width="16" height="16" fill="#4caf50"/><rect x="2" y="9" width="2" height="2" fill="white"/><rect x="4" y="11" width="2" height="2" fill="white"/><rect x="6" y="9" width="2" height="2" fill="white"/><rect x="8" y="7" width="2" height="2" fill="white"/><rect x="10" y="5" width="2" height="2" fill="white"/><rect x="12" y="3" width="2" height="4" fill="white"/></svg>
+        </div>
+        <div class="card-icon">
+          <svg viewBox="0 0 32 32"><rect x="10" y="2" width="12" height="5" fill="#f5c518"/><rect x="2" y="7" width="28" height="20" fill="#f5c518"/><rect x="4" y="9" width="24" height="16" fill="#1e3a5f"/><rect x="10" y="12" width="12" height="10" fill="#b3d4e8"/><rect x="12" y="14" width="8" height="6" fill="#5ab4d6"/><rect x="14" y="16" width="4" height="3" fill="#ffffff"/></svg>
+        </div>
+        <div class="clear-bar"><em class="sparkle sp1">✦</em><em class="sparkle sp2">✦</em><em class="sparkle sp3">✦</em><em class="sparkle sp4">✦</em><em class="sparkle sp5">✦</em>CLEAR!</div>
+      </div>
+      <div class="card-info">
+        <span class="mission-title">이미지 생성 AI</span>
+        <span class="mission-desc">AI로 나만의 이미지 만들기</span>
+      </div>
+    </div>
+
+    <!-- MISSION 04 — incomplete -->
+    <div class="mission-card">
+      <div class="card-img">
+        <span class="mission-badge">M.04</span>
+        <div class="card-status">
+          <svg viewBox="0 0 16 16" width="18" height="18"><rect x="0" y="0" width="16" height="2" fill="white"/><rect x="0" y="14" width="16" height="2" fill="white"/><rect x="0" y="0" width="2" height="16" fill="white"/><rect x="14" y="0" width="2" height="16" fill="white"/></svg>
+        </div>
+        <div class="card-icon">
+          <svg viewBox="0 0 32 32"><rect x="2" y="28" width="28" height="2" fill="#ffffff"/><rect x="4" y="18" width="6" height="10" fill="#f5c518"/><rect x="13" y="8" width="6" height="20" fill="#ffffff"/><rect x="22" y="13" width="6" height="15" fill="#b3d4e8"/></svg>
+        </div>
+      </div>
+      <div class="card-info">
+        <span class="mission-title">데이터 분석</span>
+        <span class="mission-desc">엑셀 데이터를 AI로 분석하기</span>
+      </div>
+    </div>
+
+    <!-- MISSION 05 — incomplete + photo -->
+    <div class="mission-card">
+      <div class="card-img">
+        <span class="mission-badge">M.05</span>
+        <div class="card-status">
+          <svg viewBox="0 0 14 12" width="14" height="12"><rect x="0" y="2" width="14" height="10" fill="#b3d4e8"/><rect x="4" y="0" width="6" height="4" fill="#b3d4e8"/><rect x="4" y="4" width="6" height="6" fill="#1e3a5f"/><rect x="5" y="5" width="4" height="4" fill="#5ab4d6"/></svg>
+          <svg viewBox="0 0 16 16" width="18" height="18"><rect x="0" y="0" width="16" height="2" fill="white"/><rect x="0" y="14" width="16" height="2" fill="white"/><rect x="0" y="0" width="2" height="16" fill="white"/><rect x="14" y="0" width="2" height="16" fill="white"/></svg>
+        </div>
+        <div class="card-icon">
+          <svg viewBox="0 0 32 32"><rect x="13" y="0" width="6" height="4" fill="#ffffff"/><rect x="14" y="4" width="4" height="3" fill="#f5c518"/><rect x="4" y="7" width="24" height="20" fill="#1e3a5f"/><rect x="6" y="9" width="20" height="16" fill="#f5c518"/><rect x="8" y="12" width="6" height="5" fill="#ffffff"/><rect x="18" y="12" width="6" height="5" fill="#ffffff"/><rect x="9" y="13" width="4" height="3" fill="#1e3a5f"/><rect x="19" y="13" width="4" height="3" fill="#1e3a5f"/><rect x="10" y="21" width="12" height="2" fill="#1e3a5f"/></svg>
+        </div>
+      </div>
+      <div class="card-info">
+        <span class="mission-title">나만의 챗봇</span>
+        <span class="mission-desc">커스텀 GPT 만들고 캡처하기</span>
+      </div>
+    </div>
+
+    <!-- MISSION 06 — incomplete -->
+    <div class="mission-card">
+      <div class="card-img">
+        <span class="mission-badge">M.06</span>
+        <div class="card-status">
+          <svg viewBox="0 0 16 16" width="18" height="18"><rect x="0" y="0" width="16" height="2" fill="white"/><rect x="0" y="14" width="16" height="2" fill="white"/><rect x="0" y="0" width="2" height="16" fill="white"/><rect x="14" y="0" width="2" height="16" fill="white"/></svg>
+        </div>
+        <div class="card-icon">
+          <svg viewBox="0 0 32 32"><rect x="14" y="2" width="10" height="14" fill="#f5c518"/><rect x="8" y="14" width="14" height="3" fill="#f5c518"/><rect x="8" y="17" width="10" height="13" fill="#f5c518"/><rect x="14" y="4" width="8" height="12" fill="#1e3a5f"/><rect x="10" y="17" width="8" height="11" fill="#1e3a5f"/></svg>
+        </div>
+      </div>
+      <div class="card-info">
+        <span class="mission-title">자동화 실습</span>
+        <span class="mission-desc">업무 자동화 워크플로우 만들기</span>
+      </div>
+    </div>
+
+    <!-- MISSION 07 — incomplete -->
+    <div class="mission-card">
+      <div class="card-img">
+        <span class="mission-badge">M.07</span>
+        <div class="card-status">
+          <svg viewBox="0 0 16 16" width="18" height="18"><rect x="0" y="0" width="16" height="2" fill="white"/><rect x="0" y="14" width="16" height="2" fill="white"/><rect x="0" y="0" width="2" height="16" fill="white"/><rect x="14" y="0" width="2" height="16" fill="white"/></svg>
+        </div>
+        <div class="card-icon">
+          <svg viewBox="0 0 32 32"><rect x="14" y="2" width="4" height="6" fill="#f5c518"/><rect x="24" y="8" width="6" height="4" fill="#f5c518"/><rect x="2" y="8" width="6" height="4" fill="#f5c518"/><rect x="8" y="8" width="16" height="14" fill="#f5c518"/><rect x="12" y="4" width="8" height="16" fill="#f5c518"/><rect x="13" y="10" width="6" height="4" fill="#1e3a5f"/><rect x="12" y="24" width="8" height="3" fill="#f5c518"/><rect x="10" y="27" width="12" height="3" fill="#f5c518"/></svg>
+        </div>
+      </div>
+      <div class="card-info">
+        <span class="mission-title">최종 프로젝트</span>
+        <span class="mission-desc">AI 활용 아이디어 발표하기</span>
+      </div>
+    </div>
+
+    <!-- NOTICE card — 8th slot -->
+    <div class="notice-card">
+      <div class="card-img" style="background:#0a1e3a;">
+        <span class="mission-badge" style="border-color:rgba(245,197,24,0.5);">NOTICE</span>
+        <div class="card-icon" style="position:relative;z-index:1;">
+          <svg viewBox="0 0 24 36" width="44" height="44" style="image-rendering:pixelated;">
+            <rect x="8"  y="0"  width="8"  height="22" fill="#e53935"/>
+            <rect x="10" y="2"  width="4"  height="18" fill="#0a1e3a"/>
+            <rect x="11" y="4"  width="2"  height="14" fill="#e53935"/>
+            <rect x="8"  y="28" width="8"  height="8"  fill="#e53935"/>
+            <rect x="10" y="30" width="4"  height="4"  fill="#0a1e3a"/>
+            <rect x="11" y="31" width="2"  height="2"  fill="#e53935"/>
+          </svg>
+        </div>
+      </div>
+      <div class="card-info">
+        <span class="mission-title">필독사항</span>
+        <span class="mission-desc" style="white-space:normal;line-height:1.5;">튜토리얼 진행 시 인정되지 않은 사례를 공유드립니다. 꼭 참고해주세요!! 👀</span>
+      </div>
+    </div>
+
+  </div><!-- /.mission-grid -->
+
+</div><!-- /.page-wrapper -->
+
+  <script>
+    // Auto-scale to fit viewport (PC 고정 레이아웃)
+    function scaleToFit() {
+      const wrapper = document.querySelector('.page-wrapper');
+      if (!wrapper) return;
+      wrapper.style.transform = 'none';
+      wrapper.style.marginTop = '0';
+      const h = wrapper.scrollHeight;
+      const scale = Math.min((window.innerHeight - 24) / h, 1);
+      wrapper.style.transformOrigin = 'top center';
+      if (scale < 1) wrapper.style.transform = `scale(${scale})`;
+      const topMargin = Math.max(0, (window.innerHeight - h * scale) / 2);
+      wrapper.style.marginTop = topMargin + 'px';
+    }
+    scaleToFit();
+    window.addEventListener('resize', scaleToFit);
+  </script>
+</body>
+</html>
