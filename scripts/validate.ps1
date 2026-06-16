@@ -232,6 +232,23 @@ try {
     }
   }
 
+  # [Epic2 promoted] 라우터가 ORM 직접 호출 시 WARN (서비스 레이어 우회)
+  # incident: 2026-06-17-router-direct-orm-no-service-layer / ADR-0001
+  if (Test-Path -LiteralPath "backend/app/routers") {
+    $routerFiles = @(Get-ChildItem -LiteralPath "backend/app/routers" -Recurse -File -Include "*.py" -ErrorAction SilentlyContinue |
+      Where-Object { $_.FullName -notmatch '__pycache__' })
+    if ($routerFiles.Count -gt 0) {
+      $directOrm = $routerFiles | Select-String -Pattern '\bdb\.(query|add|commit|delete|merge|flush)\(' -ErrorAction SilentlyContinue
+      if ($directOrm) {
+        $blockingWarnings += 1
+        $blockingMessages.Add("WARNING [arch]: backend/app/routers/ 에서 ORM(db.query/add/commit 등) 직접 호출 발견.")
+        $blockingMessages.Add("  비즈니스 로직은 backend/app/services/ 레이어로 분리하세요 (architecture.md 7절).")
+        $blockingMessages.Add("  참고: docs/decisions/ADR-0001-course-service-layer.md")
+        $directOrm | ForEach-Object { $blockingMessages.Add("  " + $_.ToString()) }
+      }
+    }
+  }
+
   if ($blockingWarnings -eq 0) {
     $blockingMessages.Add("Blocking check: PASSED")
   } else {
