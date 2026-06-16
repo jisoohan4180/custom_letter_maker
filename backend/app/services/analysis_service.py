@@ -17,6 +17,9 @@ NAME_COLUMN = "이름"
 PHONE_COLUMN = "연락처"
 COHORT_COLUMN = "기수"
 
+# Claude(외부 AI)에 보내지 않을 직접식별자 컬럼 (가명처리 — 이름·연락처는 분석에 불필요)
+PII_COLUMNS = {NAME_COLUMN, PHONE_COLUMN}
+
 CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-haiku-4-5")
 HRD_REGISTER_URL = os.getenv("HRD_REGISTER_URL", "https://hrd.example.com/register")
 # 외부 API 호출 timeout (초) — 한 명이 hang 돼도 다음으로 빨리 넘어가도록
@@ -208,6 +211,28 @@ def build_excel(rows: list[dict]) -> bytes:
     return buffer.getvalue()
 
 
+def _format_non_pii(row: dict) -> str:
+    """행을 'key: value' 텍스트로 만들되 직접식별자(이름·연락처)는 제외한다."""
+    return "\n".join(f"{k}: {v}" for k, v in row.items() if k not in PII_COLUMNS)
+
+
+def build_analysis_prompt(applicant: dict, interview: dict, course: CourseInfo) -> str:
+    """Claude에 보낼 분석 프롬프트를 만든다.
+
+    이름·연락처(직접식별자)는 보내지 않는다 (가명처리). 이탈 분석에는 인터뷰 평가 내용만
+    필요하므로, 외부 AI(Anthropic)에 개인정보가 전송되지 않는다 (NFR3 강화).
+    """
+    return (
+        "다음은 HRD 교육과정 지원자 정보와 인터뷰 평가입니다. "
+        "지원자의 이탈 가능성을 4항목(AI/직무이해도·과정확신도·의사결정상태·현실제약)으로 "
+        "분석하고, 등록을 독려하는 개인화 멘트 본문을 작성하세요. "
+        "이름을 모르는 상태로도 자연스러운 본문(예: 호칭 생략 또는 '안녕하세요')으로 작성하세요.\n\n"
+        f"[과정 설명]\n{course.description or '(없음)'}\n\n"
+        f"[지원자 정보]\n{_format_non_pii(applicant)}\n\n"
+        f"[인터뷰 평가]\n{_format_non_pii(interview)}"
+    )
+
+
 def make_claude_analyzer() -> Analyzer:
     """실제 Claude API를 호출하는 analyzer를 만든다. (테스트는 이 함수를 monkeypatch)"""
     import anthropic
@@ -216,16 +241,7 @@ def make_claude_analyzer() -> Analyzer:
     client = anthropic.Anthropic(api_key=os.environ["CLAUDE_API_KEY"], timeout=CLAUDE_TIMEOUT)
 
     def analyze(applicant: dict, interview: dict, course: CourseInfo) -> dict:
-        applicant_text = "\n".join(f"{k}: {v}" for k, v in applicant.items())
-        interview_text = "\n".join(f"{k}: {v}" for k, v in interview.items())
-        prompt = (
-            "다음은 HRD 교육과정 지원자 정보와 인터뷰 평가입니다. "
-            "지원자의 이탈 가능성을 4항목(AI/직무이해도·과정확신도·의사결정상태·현실제약)으로 "
-            "분석하고, 등록을 독려하는 개인화 멘트 본문을 작성하세요.\n\n"
-            f"[과정 설명]\n{course.description or '(없음)'}\n\n"
-            f"[지원자 정보]\n{applicant_text}\n\n"
-            f"[인터뷰 평가]\n{interview_text}"
-        )
+        prompt = build_analysis_prompt(applicant, interview, course)
         response = client.messages.create(
             model=CLAUDE_MODEL,
             max_tokens=1024,

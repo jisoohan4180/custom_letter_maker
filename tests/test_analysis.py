@@ -14,6 +14,7 @@ os.environ.setdefault("CLAUDE_API_KEY", "sk-ant-test-key")
 from backend.app.services import analysis_service
 from backend.app.services.analysis_service import (
     CourseInfo,
+    build_analysis_prompt,
     compose_message,
     iter_analysis_events,
     match_applicants,
@@ -53,6 +54,20 @@ def test_match_applicants_by_name():
     assert matched[0][0]["이름"] == "홍길동"
     assert len(unmatched) == 1
     assert unmatched[0]["이름"] == "김철수"
+
+
+def test_build_analysis_prompt_excludes_pii():
+    """프롬프트에 인터뷰 내용은 포함되지만 이름·연락처는 제외된다 (가명처리)"""
+    applicant = {"이름": "홍길동", "연락처": "010-1234-5678", "기수": "1기"}
+    interview = {"이름": "홍길동", "직무이해": "보통", "동기": "낮음"}
+    prompt = build_analysis_prompt(applicant, interview, _course(desc="AI 과정"))
+    # 직접식별자는 외부 AI로 나가지 않아야 한다
+    assert "홍길동" not in prompt
+    assert "010-1234-5678" not in prompt
+    # 분석에 필요한 인터뷰 내용은 포함돼야 한다
+    assert "직무이해: 보통" in prompt
+    assert "동기: 낮음" in prompt
+    assert "AI 과정" in prompt
 
 
 def test_compose_message_four_parts():
