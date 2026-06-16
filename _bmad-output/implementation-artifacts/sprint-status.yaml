@@ -1,0 +1,76 @@
+project: HRD 전환 어시스턴트
+generated: 2026-06-16
+planning_docs:
+  prd: HRD전환어시스턴트-전체문서-20260616/prd-HRD전환어시스턴트-20260616.md
+  frd: HRD전환어시스턴트-전체문서-20260616/frd-HRD전환어시스턴트-20260616.md
+  trd: HRD전환어시스턴트-전체문서-20260616/trd-HRD전환어시스턴트-20260616.md
+  architecture: _bmad-output/planning-artifacts/architecture.md
+  epics: _bmad-output/planning-artifacts/epics.md
+
+epics:
+  - id: 1
+    title: "프로젝트 기반 & 접속 인증"
+    goal: "담당자가 비밀번호를 입력해 도구에 처음 접속할 수 있다"
+    status: dev-done
+    stories:
+      - id: "1.1"
+        title: "프로젝트 초기 설정"
+        branch: story/1.1-project-setup
+        status: dev-done
+        dev: phase-a
+        review: pending
+        retrospective: pending
+      - id: "1.2"
+        title: "비밀번호 인증"
+        branch: story/1.2-password-auth
+        status: dev-done
+        dev: phase-a
+        review: pending
+        retrospective: pending
+
+  - id: 2
+    title: "과정·멘트 관리"
+    goal: "담당자가 과정별 설명과 앞/뒤 고정 멘트를 등록·수정할 수 있다"
+    status: not-started
+    stories:
+      - id: "2.1"
+        title: "과정 목록 조회"
+        branch: story/2.1-course-list
+        status: not-started
+        dev: phase-a
+        review: pending
+        retrospective: pending
+      - id: "2.2"
+        title: "과정 추가 및 수정"
+        branch: story/2.2-course-edit
+        status: not-started
+        dev: phase-a
+        review: pending
+        retrospective: pending
+
+  - id: 3
+    title: "CSV 분석 + 엑셀 다운로드"
+    goal: "담당자가 CSV 두 개를 올리면 AI가 개인화 독려 멘트가 담긴 엑셀을 자동 생성해준다"
+    status: not-started
+    stories:
+      - id: "3.1"
+        title: "CSV 업로드 + 과정 선택 화면"
+        branch: story/3.1-csv-upload
+        status: not-started
+        dev: phase-a
+        review: pending
+        retrospective: pending
+      - id: "3.2"
+        title: "AI 분석 백엔드 + 실시간 진행률"
+        branch: story/3.2-ai-analysis
+        status: not-started
+        dev: phase-a
+        review: pending
+        retrospective: pending
+      - id: "3.3"
+        title: "결과 확인 + 엑셀 다운로드"
+        branch: story/3.3-results-excel
+        status: not-started
+        dev: phase-a
+        review: pending
+        retrospective: pending
