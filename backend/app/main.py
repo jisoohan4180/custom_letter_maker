@@ -8,7 +8,7 @@ from starlette.middleware.sessions import SessionMiddleware
 # config 임포트 시점에 .env 로드 + 환경변수 검증 (SessionMiddleware 설정 전에 실행)
 from .config import validate_env
 from .models import course as _course_models  # noqa: F401
-from .routers import health, auth
+from .routers import health, auth, courses
 
 validate_env()
 
@@ -24,6 +24,7 @@ app.add_middleware(
 
 app.include_router(health.router, tags=["infra"])
 app.include_router(auth.router)
+app.include_router(courses.router)
 
 _dist = Path(__file__).parent.parent.parent / "dist"
 if _dist.exists():
