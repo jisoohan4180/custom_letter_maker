@@ -11,21 +11,23 @@ epics:
   - id: 1
     title: "프로젝트 기반 & 접속 인증"
     goal: "담당자가 비밀번호를 입력해 도구에 처음 접속할 수 있다"
-    status: dev-done
+    status: review-done
+    merged_to: develop
+    review_date: 2026-06-16
     stories:
       - id: "1.1"
         title: "프로젝트 초기 설정"
         branch: story/1.1-project-setup
-        status: dev-done
+        status: approved
         dev: phase-a
-        review: pending
+        review: done
         retrospective: pending
       - id: "1.2"
         title: "비밀번호 인증"
         branch: story/1.2-password-auth
-        status: dev-done
+        status: approved
         dev: phase-a
-        review: pending
+        review: done
         retrospective: pending
 
   - id: 2
