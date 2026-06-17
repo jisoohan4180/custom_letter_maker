@@ -179,15 +179,21 @@ def test_create_course_empty_name_rejected(auth_client):
 
 
 def test_create_course_description_too_long(auth_client):
-    """과정 설명 200자 초과 시 422"""
-    res = auth_client.post("/api/v1/courses", json={"name": "긴설명", "description": "가" * 201})
+    """과정 설명이 상한(DESCRIPTION_MAX)을 초과하면 422"""
+    from backend.app.schemas import DESCRIPTION_MAX
+
+    res = auth_client.post(
+        "/api/v1/courses", json={"name": "긴설명", "description": "가" * (DESCRIPTION_MAX + 1)}
+    )
     assert res.status_code == 422
 
 
-def test_create_course_description_exactly_200_accepted(auth_client):
-    """과정 설명 정확히 200자는 허용(포함 경계)되고 그대로 저장된다"""
-    desc = "가" * 200
-    res = auth_client.post("/api/v1/courses", json={"name": "경계200", "description": desc})
+def test_create_course_description_at_max_accepted(auth_client):
+    """과정 설명 정확히 상한 길이는 허용(포함 경계)되고 그대로 저장된다"""
+    from backend.app.schemas import DESCRIPTION_MAX
+
+    desc = "가" * DESCRIPTION_MAX
+    res = auth_client.post("/api/v1/courses", json={"name": "경계최대", "description": desc})
     assert res.status_code == 201
     assert res.json()["description"] == desc
 
@@ -240,10 +246,13 @@ def test_update_course_same_name_allowed(auth_client, seed_course):
 
 
 def test_update_course_description_too_long(auth_client, seed_course):
-    """수정 경로(PUT)에서도 과정 설명 200자 초과 시 422 (검증 회귀 방지)"""
+    """수정 경로(PUT)에서도 과정 설명이 상한 초과 시 422 (검증 회귀 방지)"""
+    from backend.app.schemas import DESCRIPTION_MAX
+
     course_id = seed_course(name="수정길이", description="old")
     res = auth_client.put(
-        f"/api/v1/courses/{course_id}", json={"name": "수정길이", "description": "가" * 201}
+        f"/api/v1/courses/{course_id}",
+        json={"name": "수정길이", "description": "가" * (DESCRIPTION_MAX + 1)},
     )
     assert res.status_code == 422
 

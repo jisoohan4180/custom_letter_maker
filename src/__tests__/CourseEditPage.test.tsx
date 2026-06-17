@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { CourseEditPage } from '../pages/CourseEditPage'
+import { CourseEditPage, DESCRIPTION_LIMIT } from '../pages/CourseEditPage'
 
 type Handler = (url: string, init?: RequestInit) => Partial<Response>
 
@@ -27,8 +27,7 @@ function renderAt(path: string) {
 }
 
 const nameInput = () => screen.getByPlaceholderText('예: AIO1') as HTMLInputElement
-const descInput = () =>
-  screen.getByPlaceholderText('AI 가 참조할 과정 어필 포인트 (200자 이내)') as HTMLTextAreaElement
+const descInput = () => screen.getByPlaceholderText(/과정 내용/) as HTMLTextAreaElement
 const saveButton = () => screen.getByRole('button', { name: /저장/ }) as HTMLButtonElement
 
 describe('CourseEditPage', () => {
@@ -44,12 +43,12 @@ describe('CourseEditPage', () => {
     expect(saveButton().disabled).toBe(false)
   })
 
-  it('과정 설명이 200자를 초과하면 카운터가 표시되고 저장이 막힌다', () => {
+  it('과정 설명이 상한을 초과하면 카운터가 표시되고 저장이 막힌다', () => {
     setFetch(() => json({}))
     renderAt('/courses/new')
     fireEvent.change(nameInput(), { target: { value: 'AIO1' } })
-    fireEvent.change(descInput(), { target: { value: '가'.repeat(201) } })
-    expect(screen.getByText('201/200')).toBeTruthy()
+    fireEvent.change(descInput(), { target: { value: '가'.repeat(DESCRIPTION_LIMIT + 1) } })
+    expect(screen.getByText(`${DESCRIPTION_LIMIT + 1}/${DESCRIPTION_LIMIT}`)).toBeTruthy()
     expect(saveButton().disabled).toBe(true)
   })
 

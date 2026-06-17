@@ -11,7 +11,8 @@ import {
   type CourseInput,
 } from '../lib/courses'
 
-const DESCRIPTION_LIMIT = 200
+// 웹에서 긁어온 내용을 붙여넣을 수 있도록 넉넉하게 (백엔드 COURSE_DESCRIPTION_MAX 와 일치)
+export const DESCRIPTION_LIMIT = 5000
 
 const EMPTY_FORM: CourseInput = { name: '', description: '', front_msg: '', back_msg: '' }
 
@@ -139,9 +140,9 @@ export function CourseEditPage() {
             <textarea
               value={form.description}
               onChange={e => updateField('description', e.target.value)}
-              rows={3}
-              placeholder="AI 가 참조할 과정 어필 포인트 (200자 이내)"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              rows={8}
+              placeholder="AI 가 참조할 과정 내용. 웹사이트에서 긁어온 내용을 그대로 붙여넣어도 됩니다 (최대 5000자)."
+              className="w-full px-3 py-2 border border-gray-300 rounded-md outline-none focus:ring-2 focus:ring-blue-500 resize-y"
             />
             <p
               className={[

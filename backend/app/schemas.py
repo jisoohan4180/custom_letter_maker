@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, field_validator
@@ -23,8 +24,9 @@ class CourseOut(BaseModel):
         return value or ""
 
 
-# 과정 설명 최대 길이 (FR14)
-DESCRIPTION_MAX = 200
+# 과정 설명 최대 길이 — 웹에서 긁어온 내용을 붙여넣을 수 있도록 넉넉하게.
+# 환경변수 COURSE_DESCRIPTION_MAX 로 조정 가능 (기본 5000자).
+DESCRIPTION_MAX = int(os.getenv("COURSE_DESCRIPTION_MAX", "5000"))
 # 앞/뒤 고정 멘트 최대 길이 (무제한 입력으로 인한 저장 abuse 방지)
 MESSAGE_MAX = 2000
 
