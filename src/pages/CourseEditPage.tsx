@@ -12,7 +12,7 @@ import {
 } from '../lib/courses'
 
 // 웹에서 긁어온 내용을 붙여넣을 수 있도록 넉넉하게 (백엔드 COURSE_DESCRIPTION_MAX 와 일치)
-export const DESCRIPTION_LIMIT = 5000
+export const DESCRIPTION_LIMIT = 20000
 
 const EMPTY_FORM: CourseInput = { name: '', description: '', front_msg: '', back_msg: '' }
 
@@ -141,7 +141,7 @@ export function CourseEditPage() {
               value={form.description}
               onChange={e => updateField('description', e.target.value)}
               rows={8}
-              placeholder="AI 가 참조할 과정 내용. 웹사이트에서 긁어온 내용을 그대로 붙여넣어도 됩니다 (최대 5000자)."
+              placeholder="AI 가 참조할 과정 내용. 웹사이트에서 긁어온 내용을 그대로 붙여넣어도 됩니다 (최대 20000자, 관련 내용 위주 권장)."
               className="w-full px-3 py-2 border border-gray-300 rounded-md outline-none focus:ring-2 focus:ring-blue-500 resize-y"
             />
             <p
