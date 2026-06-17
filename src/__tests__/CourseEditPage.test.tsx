@@ -2,6 +2,7 @@ import { render, screen, fireEvent, waitFor, within } from '@testing-library/rea
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { CourseEditPage, DESCRIPTION_LIMIT } from '../pages/CourseEditPage'
+import { SUMMARY_PROMPT } from '../lib/summaryPrompt'
 
 type Handler = (url: string, init?: RequestInit) => Partial<Response>
 
@@ -124,5 +125,25 @@ describe('CourseEditPage', () => {
     const dialog = screen.getByRole('dialog', { name: '멘트 미리보기' })
     expect(within(dialog).getByText(/AI 개인화 본문/)).toBeTruthy()
     expect(within(dialog).getByText(/HRD 등록 링크/)).toBeTruthy()
+  })
+
+  it('요약 프롬프트 복사 버튼이 클립보드에 프롬프트를 복사한다', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+    setFetch(() => json({}))
+    renderAt('/courses/new')
+    fireEvent.click(screen.getByText('📋 요약 프롬프트 복사'))
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith(SUMMARY_PROMPT)
+    })
+    expect(await screen.findByText('요약 프롬프트가 복사됐습니다')).toBeTruthy()
+  })
+
+  it('"프롬프트 보기" 토글로 프롬프트 전문이 표시된다', () => {
+    setFetch(() => json({}))
+    renderAt('/courses/new')
+    expect(screen.queryByText(/요약하는 전문가/)).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: '프롬프트 보기' }))
+    expect(screen.getByText(/HRD 교육과정 정보를 요약하는 전문가/)).toBeTruthy()
   })
 })

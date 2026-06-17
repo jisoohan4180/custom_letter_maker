@@ -10,6 +10,7 @@ import {
   DuplicateNameError,
   type CourseInput,
 } from '../lib/courses'
+import { SUMMARY_PROMPT } from '../lib/summaryPrompt'
 
 // 웹에서 긁어온 내용을 붙여넣을 수 있도록 넉넉하게 (백엔드 COURSE_DESCRIPTION_MAX 와 일치)
 export const DESCRIPTION_LIMIT = 20000
@@ -30,6 +31,18 @@ export function CourseEditPage() {
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false)
   const [showToast, setShowToast] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
+  const [showPrompt, setShowPrompt] = useState(false)
+  const [promptCopied, setPromptCopied] = useState(false)
+
+  async function copySummaryPrompt() {
+    try {
+      await navigator.clipboard.writeText(SUMMARY_PROMPT)
+      setPromptCopied(true)
+    } catch {
+      // 클립보드 사용 불가 환경 — 프롬프트를 펼쳐 직접 복사하도록 안내
+      setShowPrompt(true)
+    }
+  }
 
   useEffect(() => {
     if (!isEdit || !id) return
@@ -137,6 +150,33 @@ export function CourseEditPage() {
           </Field>
 
           <Field label="과정 설명">
+            <div className="flex flex-wrap items-center gap-2 mb-2 -mt-1">
+              <span className="text-xs text-gray-400">
+                내용이 길면 AI로 먼저 요약하세요:
+              </span>
+              <button
+                type="button"
+                onClick={copySummaryPrompt}
+                className="px-2.5 py-1 rounded border border-gray-300 text-xs text-gray-700 hover:bg-gray-50"
+              >
+                📋 요약 프롬프트 복사
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowPrompt(v => !v)}
+                className="text-xs text-blue-600 hover:underline"
+              >
+                {showPrompt ? '프롬프트 접기' : '프롬프트 보기'}
+              </button>
+            </div>
+            {showPrompt && (
+              <pre className="text-xs bg-gray-50 border border-gray-200 rounded-md p-3 mb-2 whitespace-pre-wrap break-words max-h-48 overflow-auto text-gray-600">
+                {SUMMARY_PROMPT}
+              </pre>
+            )}
+            <p className="text-xs text-gray-400 mb-2">
+              위 프롬프트를 복사해 ChatGPT 등에 [과정 원문]과 함께 붙여넣고, 나온 요약본을 아래에 붙여넣으세요.
+            </p>
             <textarea
               value={form.description}
               onChange={e => updateField('description', e.target.value)}
@@ -203,6 +243,9 @@ export function CourseEditPage() {
 
       {showToast && (
         <Toast message="저장됐습니다" onDismiss={() => navigate('/courses')} />
+      )}
+      {promptCopied && (
+        <Toast message="요약 프롬프트가 복사됐습니다" onDismiss={() => setPromptCopied(false)} />
       )}
     </div>
   )
