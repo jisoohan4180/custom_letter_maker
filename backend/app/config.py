@@ -4,9 +4,12 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-_PROJECT_ROOT = Path(__file__).parent.parent.parent
+from .paths import writable_base
 
-# 프로젝트 루트의 .env 를 임포트 시점에 로드 (uvicorn/pytest 어디서 실행해도 동작)
+# .env 와 DB 의 기준 디렉토리 (소스 실행=프로젝트 루트, exe=실행파일 폴더)
+_PROJECT_ROOT = writable_base()
+
+# .env 를 임포트 시점에 로드 (uvicorn/pytest/exe 어디서 실행해도 동작)
 load_dotenv(_PROJECT_ROOT / ".env")
 
 _REQUIRED: dict[str, str] = {

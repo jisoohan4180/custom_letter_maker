@@ -82,3 +82,7 @@ temp/
 # Test files (Korean trash, etc.)
 # ===========================================
 ㅌㅅㅌ
+
+# PyInstaller exe build artifacts
+release/
+build_pyi/
